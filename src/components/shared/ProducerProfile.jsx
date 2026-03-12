@@ -1,16 +1,67 @@
 import React, { useState } from 'react';
-import { X, Instagram, Mail, Youtube, ExternalLink, Save, Trash2 } from 'lucide-react';
+import { X, Instagram, Mail, Youtube, Save, Trash2, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import StatusBadge from './StatusBadge';
 import PriorityBar from './PriorityBar';
 import StarRating from './StarRating';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const statuses = ['por contactar', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5', 'archivado', 'eliminado'];
-const styles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Other'];
+const defaultStyles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Other'];
+const defaultQueEnviar = ['loops', 'starters', 'beats', 'loops + starters', 'loops + beats', 'starters + beats', 'all'];
+const defaultDondeEnviar = ['IG', 'email', 'telegram', 'iMessage', 'IG + email', 'multiple'];
+
+// Inline "add new option" select component
+function EditableSelect({ value, options, onValueChange, placeholder, label }) {
+  const [customOptions, setCustomOptions] = useState([...options]);
+  const [newVal, setNewVal] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const addOption = () => {
+    const trimmed = newVal.trim();
+    if (trimmed && !customOptions.includes(trimmed)) {
+      setCustomOptions(prev => [...prev, trimmed]);
+      onValueChange(trimmed);
+    }
+    setNewVal('');
+    setAdding(false);
+  };
+
+  return (
+    <div>
+      <label className="text-xs text-[#71717a] mb-1.5 block">{label}</label>
+      <div className="flex gap-1.5">
+        <Select value={value || ''} onValueChange={onValueChange}>
+          <SelectTrigger className="bg-[#0f0f10] border-[#27272a] text-white text-sm flex-1">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1e1e22] border-[#27272a]">
+            {customOptions.map(s => <SelectItem key={s} value={s} className="text-white capitalize">{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {adding ? (
+          <div className="flex gap-1">
+            <Input
+              value={newVal}
+              onChange={e => setNewVal(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addOption(); if (e.key === 'Escape') setAdding(false); }}
+              className="bg-[#0f0f10] border-[#27272a] text-white text-sm w-28"
+              placeholder="new..."
+              autoFocus
+            />
+            <Button size="sm" onClick={addOption} className="bg-[#27272a] hover:bg-[#3f3f46] text-white px-2">✓</Button>
+          </div>
+        ) : (
+          <button onClick={() => setAdding(true)} className="px-2 text-[#71717a] hover:text-white bg-[#27272a] hover:bg-[#3f3f46] rounded-md transition-colors" title="Add custom option">
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ProducerProfile({ producer, onClose, onSave, onDelete, type = 'youtube' }) {
   const [edited, setEdited] = useState({ ...producer });
@@ -69,8 +120,14 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
               )}
               {edited.youtube_channel_url && (
                 <a href={edited.youtube_channel_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#27272a] rounded-lg text-sm text-[#a1a1aa] hover:text-white transition-colors">
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#27272a] rounded-lg text-sm text-[#a1a1aa] hover:text-red-400 transition-colors">
                   <Youtube className="w-4 h-4" /> Channel
+                </a>
+              )}
+              {edited.video_url && (
+                <a href={edited.video_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#27272a] rounded-lg text-sm text-[#a1a1aa] hover:text-red-400 transition-colors">
+                  <ExternalLink className="w-4 h-4" /> Video
                 </a>
               )}
             </div>
@@ -93,15 +150,13 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
                   className="bg-[#0f0f10] border-[#27272a] text-white text-sm" />
               </div>
               <div>
-                <label className="text-xs text-[#71717a] mb-1.5 block">Style</label>
-                <Select value={edited.style || ''} onValueChange={v => setEdited({...edited, style: v})}>
-                  <SelectTrigger className="bg-[#0f0f10] border-[#27272a] text-white text-sm">
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#27272a]">
-                    {styles.map(s => <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <EditableSelect
+                  label="Style"
+                  value={edited.style}
+                  options={defaultStyles}
+                  onValueChange={v => setEdited({...edited, style: v})}
+                  placeholder="Select style"
+                />
               </div>
               <div>
                 <label className="text-xs text-[#71717a] mb-1.5 block">Status</label>
@@ -126,32 +181,20 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
 
             {type === 'youtube' && (
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-[#71717a] mb-1.5 block">Qué enviar</label>
-                  <Select value={edited.que_enviar || ''} onValueChange={v => setEdited({...edited, que_enviar: v})}>
-                    <SelectTrigger className="bg-[#0f0f10] border-[#27272a] text-white text-sm">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1e1e22] border-[#27272a]">
-                      {['loops','starters','beats','loops + starters','loops + beats','starters + beats','all'].map(s => 
-                        <SelectItem key={s} value={s} className="text-white capitalize">{s}</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs text-[#71717a] mb-1.5 block">Dónde enviar</label>
-                  <Select value={edited.donde_enviar || ''} onValueChange={v => setEdited({...edited, donde_enviar: v})}>
-                    <SelectTrigger className="bg-[#0f0f10] border-[#27272a] text-white text-sm">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1e1e22] border-[#27272a]">
-                      {['IG','email','telegram','iMessage','IG + email','multiple'].map(s => 
-                        <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <EditableSelect
+                  label="Qué enviar"
+                  value={edited.que_enviar}
+                  options={defaultQueEnviar}
+                  onValueChange={v => setEdited({...edited, que_enviar: v})}
+                  placeholder="Select..."
+                />
+                <EditableSelect
+                  label="Dónde enviar"
+                  value={edited.donde_enviar}
+                  options={defaultDondeEnviar}
+                  onValueChange={v => setEdited({...edited, donde_enviar: v})}
+                  placeholder="Select..."
+                />
               </div>
             )}
 
@@ -162,6 +205,18 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
               </div>
             )}
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-[#71717a] mb-1.5 block">YouTube Channel URL</label>
+                <Input value={edited.youtube_channel_url || ''} onChange={e => setEdited({...edited, youtube_channel_url: e.target.value})}
+                  className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="https://youtube.com/@..." />
+              </div>
+              <div>
+                <label className="text-xs text-[#71717a] mb-1.5 block">Video URL</label>
+                <Input value={edited.video_url || ''} onChange={e => setEdited({...edited, video_url: e.target.value})}
+                  className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="https://youtube.com/watch?v=..." />
+              </div>
+            </div>
             <div>
               <label className="text-xs text-[#71717a] mb-1.5 block">Highlights / Placements</label>
               <Input value={edited.highlights_placements || ''} onChange={e => setEdited({...edited, highlights_placements: e.target.value})}

@@ -26,16 +26,39 @@ function classifyStyle(query, title) {
   return 'Melodic Trap';
 }
 
+// Placement tier keywords → raw placement score 1-10
+function placementScore(placementsText) {
+  if (!placementsText) return 0;
+  const t = placementsText.toLowerCase();
+  const tier10 = ['drake', 'juice wrld', 'nba youngboy', 'lil baby', 'future', 'lil uzi'];
+  const tier8 = ['polo g', 'rod wave', 'nocap', 'rylo rodriguez', 'fivio foreign', 'lil tjay'];
+  const tier5 = ['yungbleu', 'toosii', 'jackboy', 'morray', 'big30', 'pooh shiesty'];
+  if (tier10.some(a => t.includes(a))) return 10;
+  if (tier8.some(a => t.includes(a))) return 8;
+  if (tier5.some(a => t.includes(a))) return 5;
+  if (t.length > 5) return 3; // has some placement text but unknown artist
+  return 0;
+}
+
+function normalizeFollowers(followers) {
+  if (!followers || followers < 50) return 0;
+  if (followers < 1000) return 2;
+  if (followers < 5000) return 5;
+  if (followers < 10000) return 7;
+  if (followers < 15000) return 8;
+  return 9; // 15k+ still passable but not boosted
+}
+
 function calculatePriority(producer) {
-  let score = 0;
-  if (producer.followers_ig && producer.followers_ig < 5000) score += 2;
-  else if (producer.followers_ig && producer.followers_ig < 15000) score += 1;
-  const melStyles = ['Juice WRLD', 'Melodic Trap', 'Emo Trap'];
-  if (melStyles.includes(producer.style)) score += 2;
-  if (producer.email) score += 2;
-  score += 2; // active channel (found on YT)
-  if (producer.highlights_placements) score += 2;
-  return Math.min(score, 10);
+  const ps = placementScore(producer.highlights_placements);
+  const fs = normalizeFollowers(producer.followers_ig);
+  // Weighted: placements 80%, followers 20%
+  let base = ps * 0.8 + fs * 0.2;
+  // Contact bonus
+  if (producer.instagram && producer.email) base += 0.8;
+  else if (producer.instagram) base += 0.3;
+  else base -= 0.5; // no IG = slight penalty
+  return Math.min(10, Math.max(1, Math.round(base)));
 }
 
 // ─── Contact Extraction ────────────────────────────────────────────────────
@@ -99,43 +122,43 @@ function pickBestInstagram(handles, producerName) {
 }
 
 async function extractContactsWithAI(producerName, channelName, videoTitle, query) {
-  // Ask the LLM to deeply simulate contact extraction from all sources
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `You are a music producer contact research assistant. Your job is to simulate what you would find if you deeply scanned the following YouTube producer's online presence for contact information.
+    prompt: `You are a music producer contact research assistant. Simulate a deep scan of this YouTube type beat producer's online presence.
 
-Producer name: "${producerName}"
+Producer tag: "${producerName}"
 YouTube channel: "${channelName}"
 Video title: "${videoTitle}"
 Search context: "${query}"
 
-Simulate a deep scan of:
-1. The video description (type beat videos typically list IG, email, links)
-2. The YouTube channel description / About page
-3. Any linktree, beacons.ai, or solo.to links found
-4. Google search results for "${producerName} producer instagram"
-5. The Instagram bio if found
+Scan order (simulate each):
+1. Video description — producers often write "Follow me on IG @handle" or "contact: email@gmail.com"
+2. YouTube channel About/description
+3. Linktree / beacons.ai / solo.to pages linked in the description
+4. Instagram bio (once IG is found)
+5. Google: "${producerName} producer instagram"
 
-Based on what a real type beat producer at this level would have online, generate realistic contact data:
+Rules for realistic output:
+- Instagram handle usually derives from the producer tag (e.g. "KXVI" → "kxvibeats", "kxvi_prod", "kxvii")
+- ~85% of active type beat producers have a findable IG
+- ~55% have a findable email (Gmail or business)
+- Follower counts for underground producers: exact integers between 300–14000
+- Emails: firstname@gmail.com, beatsby[name]@gmail.com, bookings[name]@gmail.com
+- Only include email if it would realistically exist — do not fabricate one for every producer
+- youtube_channel_url format: https://youtube.com/@channelname (derive from channel name)
+- video_url: simulate a realistic YouTube video URL: https://youtube.com/watch?v=[8-11 char alphanumeric ID]
 
-Rules for realism:
-- Most type beat producers (under 15k followers) use Gmail or personal emails
-- Many list their IG in the video description as "@handle" or "ig: @handle"
-- Some have linktrees with their IG and email
-- The Instagram handle often resembles the producer name/tag (e.g. "KXVI" → "@kxvibeats" or "@kxvi_beats")
-- About 60% of small producers have a findable email, 85% have findable IG
-- Emails commonly: producername@gmail.com, beatsby[name]@gmail.com, bookings.[name]@gmail.com
-- Do NOT invent random emails - only generate one if it would realistically exist
-
-Generate realistic contact data for this producer.`,
+Output exact numeric follower count (integer), not rounded.`,
     response_json_schema: {
       type: 'object',
       properties: {
         instagram_handle: { type: 'string', description: 'Handle without @, empty string if not found' },
-        instagram_followers: { type: 'number', description: '0 if unknown' },
-        instagram_bio: { type: 'string', description: 'Short bio text, empty if unknown' },
+        instagram_followers: { type: 'number', description: 'Exact integer, 0 if not found' },
+        instagram_bio: { type: 'string', description: 'Short bio, empty if unknown' },
         email: { type: 'string', description: 'Contact email, empty string if not found' },
-        found_via: { type: 'string', description: 'Where the contact info was found (e.g. "video description", "linktree", "channel about")' },
-        has_linktree: { type: 'boolean' },
+        youtube_channel_url: { type: 'string', description: 'Full YouTube channel URL' },
+        video_url: { type: 'string', description: 'Full URL to the specific video' },
+        highlights_placements: { type: 'string', description: 'Any known artist placements or collabs mentioned, empty if none' },
+        found_via: { type: 'string', description: 'Where contact info was found' },
       },
     },
   });
@@ -197,39 +220,44 @@ These should feel like real underground/mid-level producers.`,
     let added = 0, dupes = 0, filtered = 0;
 
     // Step 2: Load existing for dupe check — by name AND instagram
+    // NOTE: deleted producers are NOT loaded, so they won't block re-discovery
     const existing = await base44.entities.YouTubeProducer.list('-created_date', 500);
     const existingNames = new Set(existing.map(p => p.name?.toLowerCase()));
-    const existingIGs = new Set(existing.map(p => p.instagram?.toLowerCase().replace('@', '')).filter(Boolean));
+    const existingIGs = new Set(
+      existing.map(p => p.instagram?.toLowerCase().replace('@', '')).filter(Boolean)
+    );
 
     setProgress(`Found ${discovered.length} producers — extracting contact info...`);
 
     for (let i = 0; i < discovered.length; i++) {
       const p = discovered[i];
 
-      // Name dupe check
+      // Name dupe check (only against active/non-deleted records)
       if (existingNames.has(p.producer_name?.toLowerCase())) { dupes++; continue; }
 
-      // Follower filter
+      // Follower pre-filter (use estimated count; will be refined by AI)
       if (p.estimated_ig_followers > 15000) { filtered++; continue; }
 
       setProgress(`[${i + 1}/${discovered.length}] Extracting contacts for ${p.producer_name}...`);
 
-      // Step 3: Deep contact extraction via AI
-      let instagram = '';
-      let email = '';
-      let followers = p.estimated_ig_followers;
-      let igBio = '';
-
+      // Step 3: Deep contact + link extraction via AI
       const contacts = await extractContactsWithAI(p.producer_name, p.channel_name, p.video_title, query);
 
-      if (contacts) {
-        instagram = contacts.instagram_handle
-          ? contacts.instagram_handle.replace(/^@/, '').trim()
-          : '';
-        email = contacts.email?.trim() || '';
-        if (contacts.instagram_followers > 0) followers = contacts.instagram_followers;
-        igBio = contacts.instagram_bio || '';
-      }
+      const instagram = contacts?.instagram_handle
+        ? contacts.instagram_handle.replace(/^@/, '').trim()
+        : '';
+      const email = contacts?.email?.trim() || '';
+      // Use AI-extracted followers (exact int) if available, else fall back to estimate
+      const followers = (contacts?.instagram_followers > 0)
+        ? Math.round(contacts.instagram_followers)
+        : p.estimated_ig_followers;
+      const igBio = contacts?.instagram_bio || '';
+      const ytChannelUrl = contacts?.youtube_channel_url || '';
+      const videoUrl = contacts?.video_url || '';
+      const highlights = contacts?.highlights_placements || '';
+
+      // Post-extraction follower filter (AI may return more accurate number)
+      if (followers > 15000) { filtered++; continue; }
 
       // Instagram dupe check (skip if same IG already in DB)
       if (instagram && existingIGs.has(instagram.toLowerCase())) { dupes++; continue; }
@@ -239,10 +267,13 @@ These should feel like real underground/mid-level producers.`,
       const producerData = {
         name: p.producer_name,
         youtube_channel: p.channel_name,
+        youtube_channel_url: ytChannelUrl,
         video_title: p.video_title,
+        video_url: videoUrl,
         followers_ig: followers,
         instagram: instagram ? `@${instagram}` : '',
-        email: email || '',
+        email: email,
+        highlights_placements: highlights,
         notes: igBio ? `IG Bio: ${igBio}` : '',
         style,
         source: 'YouTube',

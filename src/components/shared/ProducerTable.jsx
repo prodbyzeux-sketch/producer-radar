@@ -1,9 +1,8 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import StatusBadge from './StatusBadge';
 import PriorityBar from './PriorityBar';
-import { ExternalLink, Instagram } from 'lucide-react';
+import { Instagram, Youtube } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const styleColors = {
@@ -28,6 +27,7 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
               <TableHead className="text-[#71717a] text-xs font-medium">Followers</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Style</TableHead>
               {showArtist && <TableHead className="text-[#71717a] text-xs font-medium">Artist</TableHead>}
+              <TableHead className="text-[#71717a] text-xs font-medium">YouTube</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Priority</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Status</TableHead>
             </TableRow>
@@ -74,6 +74,23 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
                     <TableCell className="text-[#a1a1aa] text-sm">{producer.artist || '—'}</TableCell>
                   )}
                   <TableCell>
+                    {producer.youtube_channel_url ? (
+                      <a
+                        href={producer.youtube_channel_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-red-400 transition-colors text-sm"
+                        onClick={e => e.stopPropagation()}
+                        title={producer.youtube_channel || 'YouTube Channel'}
+                      >
+                        <Youtube className="w-3.5 h-3.5" />
+                        <span className="max-w-[80px] truncate text-xs">{producer.youtube_channel || 'Channel'}</span>
+                      </a>
+                    ) : (
+                      <span className="text-[#3f3f46] text-sm">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <PriorityBar score={producer.priority_score || 0} />
                   </TableCell>
                   <TableCell>
@@ -84,7 +101,7 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
             </AnimatePresence>
             {producers.length === 0 && (
               <TableRow className="border-[#27272a]">
-                <TableCell colSpan={showArtist ? 7 : 6} className="text-center py-12 text-[#3f3f46]">
+                <TableCell colSpan={showArtist ? 8 : 7} className="text-center py-12 text-[#3f3f46]">
                   No producers found
                 </TableCell>
               </TableRow>
