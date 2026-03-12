@@ -1,0 +1,105 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Search, Plus } from 'lucide-react';
+import ProducerTable from '@/components/shared/ProducerTable';
+import ProducerProfile from '@/components/shared/ProducerProfile';
+import AddProducerDialog from '@/components/shared/AddProducerDialog';
+import { toast } from 'sonner';
+
+const statuses = ['all', 'por contactar', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5', 'archivado', 'eliminado'];
+
+export default function PlacementProducers() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selected, setSelected] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const { data: producers = [] } = useQuery({
+    queryKey: ['placement-producers'],
+    queryFn: () => base44.entities.PlacementProducer.list('-created_date', 200),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.PlacementProducer.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+      setSelected(null);
+      toast.success('Producer updated');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.PlacementProducer.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+      setSelected(null);
+      toast.success('Producer deleted');
+    },
+  });
+
+  const filtered = producers.filter(p => {
+    const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.artist?.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === 'all' || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Placement Producers</h1>
+          <p className="text-[#71717a] text-sm mt-1">{producers.length} producers from song credits</p>
+        </div>
+        <Button onClick={() => setShowAdd(true)} className="bg-[#2563eb] hover:bg-[#3b82f6] text-white" size="sm">
+          <Plus className="w-4 h-4 mr-1.5" /> Add Producer
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a]" />
+          <Input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name or artist..."
+            className="pl-10 bg-[#18181b] border-[#27272a] text-white text-sm" />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[160px] bg-[#18181b] border-[#27272a] text-white text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1e1e22] border-[#27272a]">
+            {statuses.map(s => <SelectItem key={s} value={s} className="text-white capitalize">{s === 'all' ? 'All Statuses' : s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <ProducerTable producers={filtered} onRowClick={setSelected} showArtist />
+
+      {selected && (
+        <ProducerProfile
+          producer={selected}
+          type="placement"
+          onClose={() => setSelected(null)}
+          onSave={data => updateMutation.mutate({ id: data.id, data })}
+          onDelete={id => deleteMutation.mutate(id)}
+        />
+      )}
+
+      {showAdd && (
+        <AddProducerDialog 
+          type="placement"
+          onClose={() => setShowAdd(false)}
+          onAdded={() => {
+            queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+            setShowAdd(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,153 @@
+import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Users, Check, Instagram, Mail, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import PriorityBar from '@/components/shared/PriorityBar';
+import StatusBadge from '@/components/shared/StatusBadge';
+import { toast } from 'sonner';
+
+const styleColors = {
+  'Juice WRLD': 'text-purple-400',
+  'Polo G': 'text-sky-400',
+  'Rod Wave': 'text-teal-400',
+  'NBA YoungBoy': 'text-red-400',
+  'Melodic Trap': 'text-indigo-400',
+  'Emo Trap': 'text-pink-400',
+  'Other': 'text-zinc-400',
+};
+
+export default function DailyContacts() {
+  const queryClient = useQueryClient();
+
+  const { data: ytProducers = [] } = useQuery({
+    queryKey: ['youtube-producers'],
+    queryFn: () => base44.entities.YouTubeProducer.list('-priority_score', 200),
+  });
+
+  const { data: plProducers = [] } = useQuery({
+    queryKey: ['placement-producers'],
+    queryFn: () => base44.entities.PlacementProducer.list('-priority_score', 200),
+  });
+
+  const markContactedYT = useMutation({
+    mutationFn: (id) => base44.entities.YouTubeProducer.update(id, { 
+      status: 'contactado', 
+      date_contacted: new Date().toISOString().split('T')[0] 
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['youtube-producers'] });
+      toast.success('Marked as contacted');
+    },
+  });
+
+  const markContactedPL = useMutation({
+    mutationFn: (id) => base44.entities.PlacementProducer.update(id, { status: 'contactado' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+      toast.success('Marked as contacted');
+    },
+  });
+
+  // Get top 10 by priority, only "por contactar"
+  const allPending = [
+    ...ytProducers.filter(p => p.status === 'por contactar').map(p => ({ ...p, _type: 'yt' })),
+    ...plProducers.filter(p => p.status === 'por contactar').map(p => ({ ...p, _type: 'pl' })),
+  ].sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0)).slice(0, 10);
+
+  // Follow-ups needed
+  const followUps = [
+    ...ytProducers.filter(p => p.status?.startsWith('follow up')).map(p => ({ ...p, _type: 'yt' })),
+    ...plProducers.filter(p => p.status?.startsWith('follow up')).map(p => ({ ...p, _type: 'pl' })),
+  ].sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Daily Contacts</h1>
+        <p className="text-[#71717a] text-sm mt-1">Top producers to reach out to today</p>
+      </div>
+
+      {/* Today's Top 10 */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="w-5 h-5 text-[#3b82f6]" />
+          <h2 className="text-lg font-semibold text-white">Today's Top 10</h2>
+        </div>
+        <div className="grid gap-3">
+          {allPending.length === 0 && (
+            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-8 text-center text-[#3f3f46]">
+              No producers pending contact. Run discovery to find new producers!
+            </div>
+          )}
+          {allPending.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-[#18181b] border border-[#27272a] rounded-xl p-4 flex items-center gap-4 hover:border-[#3f3f46] transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#2563eb]/10 flex items-center justify-center text-sm font-bold text-[#3b82f6] flex-shrink-0">
+                {i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-white truncate">{p.name}</p>
+                  {p.style && <span className={`text-xs ${styleColors[p.style] || 'text-zinc-400'}`}>{p.style}</span>}
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  {p.instagram && (
+                    <a href={`https://instagram.com/${p.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#3b82f6] transition-colors">
+                      <Instagram className="w-3 h-3" /> {p.instagram}
+                    </a>
+                  )}
+                  {p.email && (
+                    <a href={`mailto:${p.email}`} className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#3b82f6] transition-colors">
+                      <Mail className="w-3 h-3" /> {p.email}
+                    </a>
+                  )}
+                  <span className="text-xs text-[#3f3f46]">
+                    {p.followers_ig ? `${p.followers_ig.toLocaleString()} followers` : 'No IG data'}
+                  </span>
+                </div>
+              </div>
+              <PriorityBar score={p.priority_score || 0} />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => p._type === 'yt' ? markContactedYT.mutate(p.id) : markContactedPL.mutate(p.id)}
+                className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+              >
+                <Check className="w-4 h-4 mr-1" /> Contacted
+              </Button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Follow Ups */}
+      {followUps.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold text-white mb-4">Follow Ups Needed</h2>
+          <div className="bg-[#18181b] border border-[#27272a] rounded-xl divide-y divide-[#27272a]">
+            {followUps.map(p => (
+              <div key={p.id} className="flex items-center justify-between px-5 py-3">
+                <div>
+                  <p className="text-sm font-medium text-white">{p.name}</p>
+                  <p className="text-xs text-[#71717a]">{p.instagram || 'No IG'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <PriorityBar score={p.priority_score || 0} />
+                  <StatusBadge status={p.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
