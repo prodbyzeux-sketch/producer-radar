@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import StatusBadge from '@/components/shared/StatusBadge';
 import DiscoveryRunner from '@/components/discovery/DiscoveryRunner';
+import PlacementDiscovery from '@/components/discovery/PlacementDiscovery';
 
 const defaultQueries = [
   'juice wrld type beat',
@@ -35,6 +36,9 @@ export default function Discovery() {
 
       {/* YouTube Discovery */}
       <DiscoveryRunner />
+
+      {/* Placement Discovery */}
+      <PlacementDiscovery />
 
       {/* Discovery Logs */}
       <div>

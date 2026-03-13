@@ -123,7 +123,20 @@ function pickBestInstagram(handles, producerName) {
 
 async function extractContactsWithAI(producerName, channelName, videoTitle, query) {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `You are a music producer contact research assistant. Simulate a deep scan of this YouTube type beat producer's online presence.
+    model: 'gemini_3_flash',
+    add_context_from_internet: true,
+    prompt: `Search the internet for contact information for this music producer. Use Google, Instagram, and any link aggregators.
+
+Producer tag: "${producerName}"
+YouTube channel: "${channelName}"
+Video title: "${videoTitle}"
+
+Search for:
+1. Their Instagram profile (search: "${producerName} producer instagram" or "${channelName} instagram")
+2. Their email (check video description, channel about page, linktree/beacons links)
+3. Any known artist placements or collabs
+
+Return only real, verified information you actually found. If you cannot find something, leave it empty.
 
 Producer tag: "${producerName}"
 YouTube channel: "${channelName}"
