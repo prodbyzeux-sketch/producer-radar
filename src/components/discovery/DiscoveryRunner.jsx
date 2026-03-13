@@ -185,18 +185,25 @@ export default function DiscoveryRunner() {
       filtered_out: 0,
     });
 
-    // Step 1: Find producers from YouTube search
-    setProgress('Scanning YouTube search results...');
+    // Step 1: Real YouTube search via internet-connected LLM
+    setProgress('Searching YouTube for real videos...');
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a YouTube type beat research assistant. For the search query "${query}", generate a realistic list of 15-20 music producers that would appear in YouTube search results for type beats.
+      model: 'gemini_3_flash',
+      add_context_from_internet: true,
+      prompt: `Search YouTube right now for: "${query}"
 
-For each producer generate:
-- producer_name: realistic producer tag (e.g. KXVI, Pluto, Sadboii, wavvy, etc.)
-- channel_name: their YouTube channel name
-- video_title: a realistic type beat video title with their tag in it
-- estimated_ig_followers: realistic Instagram follower count (bias toward under 15k — most small producers have 500–12000)
+Find 10-15 REAL videos currently on YouTube for this search term. These must be actual existing videos, not invented ones.
 
-These should feel like real underground/mid-level producers.`,
+For each real video, extract:
+- producer_name: the producer tag/name from the video title (look for "prod. NAME", "(NAME type beat)", "[NAME]", or the channel name if no tag)
+- channel_name: the exact YouTube channel name
+- channel_url: the YouTube channel URL (e.g. https://youtube.com/@channelname or https://youtube.com/c/channelname)
+- video_title: the exact video title as it appears on YouTube
+- video_url: the full YouTube video URL (https://youtube.com/watch?v=VIDEOID)
+- video_description_snippet: first 200 chars of the video description if visible
+- estimated_ig_followers: your best estimate of their Instagram follower count based on channel size
+
+Only include real, existing YouTube videos. Do not invent any.`,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -207,7 +214,10 @@ These should feel like real underground/mid-level producers.`,
               properties: {
                 producer_name: { type: 'string' },
                 channel_name: { type: 'string' },
+                channel_url: { type: 'string' },
                 video_title: { type: 'string' },
+                video_url: { type: 'string' },
+                video_description_snippet: { type: 'string' },
                 estimated_ig_followers: { type: 'number' },
               },
             },
@@ -240,7 +250,7 @@ These should feel like real underground/mid-level producers.`,
 
       setProgress(`[${i + 1}/${discovered.length}] Extracting contacts for ${p.producer_name}...`);
 
-      // Step 3: Deep contact + link extraction via AI
+      // Step 3: Deep contact + link extraction via AI (internet search)
       const contacts = await extractContactsWithAI(p.producer_name, p.channel_name, p.video_title, query);
 
       const instagram = contacts?.instagram_handle
@@ -252,8 +262,9 @@ These should feel like real underground/mid-level producers.`,
         ? Math.round(contacts.instagram_followers)
         : p.estimated_ig_followers;
       const igBio = contacts?.instagram_bio || '';
-      const ytChannelUrl = contacts?.youtube_channel_url || '';
-      const videoUrl = contacts?.video_url || '';
+      // Use real URLs from the YouTube search first, fall back to AI-extracted
+      const ytChannelUrl = p.channel_url || contacts?.youtube_channel_url || '';
+      const videoUrl = p.video_url || contacts?.video_url || '';
       const highlights = contacts?.highlights_placements || '';
 
       // Post-extraction follower filter (AI may return more accurate number)
