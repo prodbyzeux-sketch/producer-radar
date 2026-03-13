@@ -290,6 +290,11 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
                 <Input value={edited.video_url || ''} onChange={e => setEdited({...edited, video_url: e.target.value})}
                   className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="https://youtube.com/watch?v=..." />
               </div>
+              <div>
+                <label className="text-xs text-[#71717a] mb-1.5 block">YouTube Subscribers</label>
+                <Input type="number" value={edited.youtube_subscribers || ''} onChange={e => setEdited({...edited, youtube_subscribers: parseInt(e.target.value) || 0})}
+                  className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="0" />
+              </div>
             </div>
             <div>
               <label className="text-xs text-[#71717a] mb-1.5 block">Highlights / Placements</label>
