@@ -27,13 +27,13 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
           <TableHeader>
             <TableRow className="border-[#27272a] hover:bg-transparent">
               {multiSelectMode && (
-                <TableHead className="w-10 pl-4">
+                <TableHead className="w-8 pl-3">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
                     onChange={() => onToggleAll?.()}
-                    className="w-4 h-4 rounded border-[#3f3f46] bg-[#0f0f10] accent-[#2563eb] cursor-pointer"
+                    className="w-3.5 h-3.5 rounded-sm border-[#3f3f46] bg-[#0f0f10] accent-[#3f3f46] cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
                   />
                 </TableHead>
               )}
@@ -58,7 +58,7 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.02 }}
                     className={`border-[#27272a] cursor-pointer transition-colors ${
-                      isSelected ? 'bg-[#2563eb]/5' : 'hover:bg-white/[0.02]'
+                      isSelected ? 'bg-white/[0.03]' : 'hover:bg-white/[0.02]'
                     }`}
                     onClick={() => {
                       if (multiSelectMode) onToggleSelect?.(producer.id);
@@ -66,12 +66,12 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
                     }}
                   >
                     {multiSelectMode && (
-                      <TableCell className="pl-4" onClick={e => { e.stopPropagation(); onToggleSelect?.(producer.id); }}>
+                      <TableCell className="pl-3" onClick={e => { e.stopPropagation(); onToggleSelect?.(producer.id); }}>
                         <input
                           type="checkbox"
                           checked={isSelected || false}
                           onChange={() => onToggleSelect?.(producer.id)}
-                          className="w-4 h-4 rounded border-[#3f3f46] bg-[#0f0f10] accent-[#2563eb] cursor-pointer"
+                          className="w-3.5 h-3.5 rounded-sm border-[#3f3f46] bg-[#0f0f10] accent-[#3f3f46] cursor-pointer opacity-40 hover:opacity-100 transition-opacity"
                         />
                       </TableCell>
                     )}
