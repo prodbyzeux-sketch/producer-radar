@@ -219,8 +219,10 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
             </div>
             <div>
               <label className="text-xs text-[#71717a] mb-1.5 block">Highlights / Placements</label>
-              <Input value={edited.highlights_placements || ''} onChange={e => setEdited({...edited, highlights_placements: e.target.value})}
-                className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="Notable placements..." />
+              <HighlightsInput
+                value={edited.highlights_placements || ''}
+                onChange={v => setEdited({...edited, highlights_placements: v})}
+              />
             </div>
 
             <div>
