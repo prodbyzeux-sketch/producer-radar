@@ -13,6 +13,80 @@ const defaultStyles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melo
 const defaultQueEnviar = ['loops', 'starters', 'beats', 'loops + starters', 'loops + beats', 'starters + beats', 'all'];
 const defaultDondeEnviar = ['IG', 'email', 'telegram', 'iMessage', 'IG + email', 'multiple'];
 
+// Known artist tags for highlights
+const KNOWN_ARTISTS = [
+  'Juice WRLD', 'Drake', 'Lil Baby', 'NBA YoungBoy', 'Rod Wave', 'Polo G',
+  'NoCap', 'Future', 'Lil Uzi Vert', 'Rylo Rodriguez', 'Lil Tjay', 'Toosii',
+  'Morray', 'Pooh Shiesty', 'Big30', 'Fivio Foreign', 'Lil Durk', 'Gunna',
+  'YoungBoy', 'SleazyWorld Go', 'Yungbleu', 'Jackboy',
+];
+
+// Tags input for highlights/placements
+function HighlightsInput({ value, onChange }) {
+  const tags = value ? value.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const [inputVal, setInputVal] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const suggestions = KNOWN_ARTISTS.filter(a =>
+    inputVal.length > 0 &&
+    a.toLowerCase().includes(inputVal.toLowerCase()) &&
+    !tags.includes(a)
+  );
+
+  const addTag = (tag) => {
+    const trimmed = tag.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      onChange([...tags, trimmed].join(', '));
+    }
+    setInputVal('');
+    setShowSuggestions(false);
+  };
+
+  const removeTag = (tag) => {
+    onChange(tags.filter(t => t !== tag).join(', '));
+  };
+
+  return (
+    <div className="bg-[#0f0f10] border border-[#27272a] rounded-md px-3 py-2 min-h-[38px]">
+      <div className="flex flex-wrap gap-1.5 mb-1.5">
+        {tags.map(tag => (
+          <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-[#2563eb]/15 border border-[#2563eb]/30 text-[#60a5fa] rounded text-xs font-medium">
+            {tag}
+            <button onClick={() => removeTag(tag)} className="text-[#60a5fa]/60 hover:text-[#60a5fa] ml-0.5">×</button>
+          </span>
+        ))}
+      </div>
+      <div className="relative">
+        <input
+          value={inputVal}
+          onChange={e => { setInputVal(e.target.value); setShowSuggestions(true); }}
+          onKeyDown={e => {
+            if ((e.key === 'Enter' || e.key === ',') && inputVal.trim()) { e.preventDefault(); addTag(inputVal); }
+            if (e.key === 'Backspace' && !inputVal && tags.length > 0) removeTag(tags[tags.length - 1]);
+          }}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+          onFocus={() => setShowSuggestions(true)}
+          placeholder={tags.length === 0 ? 'Add artist placements...' : 'Add more...'}
+          className="w-full bg-transparent text-white text-sm outline-none placeholder:text-[#3f3f46]"
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 mt-1 w-full bg-[#1e1e22] border border-[#27272a] rounded-lg shadow-xl z-10 overflow-hidden">
+            {suggestions.slice(0, 6).map(s => (
+              <button
+                key={s}
+                onMouseDown={() => addTag(s)}
+                className="w-full text-left px-3 py-2 text-sm text-[#a1a1aa] hover:text-white hover:bg-[#27272a] transition-colors"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Inline "add new option" select component
 function EditableSelect({ value, options, onValueChange, placeholder, label }) {
   const [customOptions, setCustomOptions] = useState([...options]);

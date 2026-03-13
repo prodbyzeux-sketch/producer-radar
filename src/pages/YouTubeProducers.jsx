@@ -4,10 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Download } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import ProducerTable from '@/components/shared/ProducerTable';
 import ProducerProfile from '@/components/shared/ProducerProfile';
 import AddProducerDialog from '@/components/shared/AddProducerDialog';
+import BulkActionBar from '@/components/shared/BulkActionBar';
 import { toast } from 'sonner';
 
 const statuses = ['all', 'por contactar', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5', 'archivado', 'eliminado'];
@@ -19,6 +20,7 @@ export default function YouTubeProducers() {
   const [styleFilter, setStyleFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const queryClient = useQueryClient();
 
@@ -52,8 +54,46 @@ export default function YouTubeProducers() {
     return matchSearch && matchStatus && matchStyle;
   });
 
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (filtered.every(p => selectedIds.has(p.id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(p => p.id)));
+    }
+  };
+
+  const handleBulkUpdate = async (data) => {
+    await Promise.all([...selectedIds].map(id => base44.entities.YouTubeProducer.update(id, data)));
+    queryClient.invalidateQueries({ queryKey: ['youtube-producers'] });
+    toast.success(`Updated ${selectedIds.size} producers`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    await Promise.all([...selectedIds].map(id => base44.entities.YouTubeProducer.delete(id)));
+    queryClient.invalidateQueries({ queryKey: ['youtube-producers'] });
+    toast.success(`Deleted ${selectedIds.size} producers`);
+    setSelectedIds(new Set());
+  };
+
+  const handleRowClick = (producer) => {
+    if (selectedIds.size > 0) {
+      toggleSelect(producer.id);
+    } else {
+      setSelected(producer);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">YouTube Producers</h1>
@@ -90,7 +130,21 @@ export default function YouTubeProducers() {
         </Select>
       </div>
 
-      <ProducerTable producers={filtered} onRowClick={setSelected} />
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onBulkUpdate={handleBulkUpdate}
+        onBulkDelete={handleBulkDelete}
+        type="youtube"
+      />
+
+      <ProducerTable
+        producers={filtered}
+        onRowClick={handleRowClick}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelect}
+        onToggleAll={toggleAll}
+      />
 
       {selected && (
         <ProducerProfile
@@ -103,7 +157,7 @@ export default function YouTubeProducers() {
       )}
 
       {showAdd && (
-        <AddProducerDialog 
+        <AddProducerDialog
           type="youtube"
           onClose={() => setShowAdd(false)}
           onAdded={() => {
