@@ -379,7 +379,7 @@ export default function PlacementDiscovery() {
         };
       }));
 
-      enriched.push(...results);
+      enriched.push(...results.filter(Boolean));
       setStats(s => ({ ...s, detected: rawProducers.length }));
       setEnrichStatus(`Enriching ${Math.min(i + BATCH_SIZE, rawProducers.length)} / ${rawProducers.length}`);
     }
