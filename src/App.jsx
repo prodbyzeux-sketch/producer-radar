@@ -45,6 +45,7 @@ const AuthenticatedApp = () => {
         <Route path="/Discovery" element={<Discovery />} />
         <Route path="/DailyContacts" element={<DailyContacts />} />
         <Route path="/MessageGenerator" element={<MessageGenerator />} />
+        <Route path="/Contacts" element={<Contacts />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

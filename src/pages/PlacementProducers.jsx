@@ -148,6 +148,7 @@ export default function PlacementProducers() {
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
         onToggleAll={toggleAll}
+        onToggleFavorite={p => updateMutation.mutate({ id: p.id, data: { favorite: !p.favorite } })}
       />
 
       {selected && (

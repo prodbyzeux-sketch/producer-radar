@@ -48,7 +48,9 @@ export default function YouTubeProducers() {
     },
   });
 
+  const HIDDEN = ['archivado', 'eliminado'];
   const filtered = producers.filter(p => {
+    if (statusFilter === 'all' && HIDDEN.includes(p.status)) return false;
     const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.instagram?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || p.status === statusFilter;
     const matchStyle = styleFilter === 'all' || p.style === styleFilter;
@@ -152,12 +154,13 @@ export default function YouTubeProducers() {
       />
 
       <ProducerTable
-              showPlacements={false}
+        showPlacements={false}
         producers={filtered}
         onRowClick={handleRowClick}
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
         onToggleAll={toggleAll}
+        onToggleFavorite={p => updateMutation.mutate({ id: p.id, data: { favorite: !p.favorite } })}
       />
 
       {selected && (
