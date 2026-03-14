@@ -128,10 +128,10 @@ export default function DailyContacts() {
     ...plProducers.filter(p => p.status === 'por contactar').map(p => ({ ...p, _type: 'pl' })),
   ].sort((a, b) => (b.priority || 0) - (a.priority || 0)).slice(0, 10);
 
-  // Follow ups pendientes: next_follow_up <= hoy (o sin fecha)
+  // Follow ups pendientes: contactado (24h espera) + follow up X con fecha <= hoy
   const followUpsDue = [
-    ...ytProducers.filter(p => p.status?.startsWith('follow up')).map(p => ({ ...p, _type: 'yt' })),
-    ...plProducers.filter(p => p.status?.startsWith('follow up')).map(p => ({ ...p, _type: 'pl' })),
+    ...ytProducers.filter(p => p.status?.startsWith('follow up') || p.status === 'contactado').map(p => ({ ...p, _type: 'yt' })),
+    ...plProducers.filter(p => p.status?.startsWith('follow up') || p.status === 'contactado').map(p => ({ ...p, _type: 'pl' })),
   ].filter(p => {
     if (!p.next_follow_up) return true;
     const d = new Date(p.next_follow_up); d.setHours(0,0,0,0);
