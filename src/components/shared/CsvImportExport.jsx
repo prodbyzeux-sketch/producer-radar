@@ -59,25 +59,42 @@ function parseCsv(text) {
     });
 }
 
-// Normalize CSV header → entity field key
+// Normalize CSV header → entity field key (covers Notion exports and manual CSVs)
 const FIELD_ALIASES = {
-  name: 'name', producer: 'name', producer_name: 'name',
+  // Name
+  name: 'name', producer: 'name', producer_name: 'name', nombre: 'name',
+  // Instagram
   instagram: 'instagram', ig: 'instagram', ig_handle: 'instagram',
-  email: 'email',
+  instagram_handle: 'instagram', instagram_url: 'instagram',
+  // Email
+  email: 'email', correo: 'email', contact_email: 'email',
+  // Followers
   followers: 'followers_ig', followers_ig: 'followers_ig', ig_followers: 'followers_ig',
-  style: 'style',
-  status: 'status',
-  placements: 'highlights_placements', highlights: 'highlights_placements', highlights_placements: 'highlights_placements', featured_placements: 'highlights_placements',
-  notes: 'notes',
-  priority: 'priority_score', priority_score: 'priority_score',
-  que_enviar: 'que_enviar', what_to_send: 'que_enviar',
-  donde_enviar: 'donde_enviar', where_to_send: 'donde_enviar',
-  youtube_channel: 'youtube_channel',
-  youtube_channel_url: 'youtube_channel_url',
-  youtube_subscribers: 'youtube_subscribers',
+  seguidores: 'followers_ig', seguidores_ig: 'followers_ig',
+  // Style
+  style: 'style', estilo: 'style',
+  // Status
+  status: 'status', estado: 'status',
+  // Placements
+  placements: 'highlights_placements', highlights: 'highlights_placements',
+  highlights_placements: 'highlights_placements', featured_placements: 'highlights_placements',
+  artistas: 'highlights_placements', artist_placements: 'highlights_placements',
+  colaboraciones: 'highlights_placements',
+  // Notes
+  notes: 'notes', notas: 'notes',
+  // Priority
+  priority: 'priority_score', priority_score: 'priority_score', prioridad: 'priority_score',
+  // Que/Donde enviar
+  que_enviar: 'que_enviar', what_to_send: 'que_enviar', qu__enviar: 'que_enviar',
+  donde_enviar: 'donde_enviar', where_to_send: 'donde_enviar', d_nde_enviar: 'donde_enviar',
+  // YouTube
+  youtube_channel: 'youtube_channel', canal: 'youtube_channel',
+  youtube_channel_url: 'youtube_channel_url', canal_url: 'youtube_channel_url',
+  youtube_subscribers: 'youtube_subscribers', suscriptores: 'youtube_subscribers',
   video_url: 'video_url',
-  artist: 'artist',
-  song: 'song',
+  // Placement-specific
+  artist: 'artist', artista: 'artist',
+  song: 'song', canci_n: 'song', cancion: 'song', tema: 'song',
 };
 
 function mapCsvRow(row) {
