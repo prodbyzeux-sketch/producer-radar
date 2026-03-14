@@ -11,6 +11,9 @@ import QuickEditModal from '@/components/shared/QuickEditModal';
 import { useAutoAdvanceStatus } from '@/components/shared/useAutoAdvanceStatus';
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
+  const [editProducer, setEditProducer] = useState(null);
+
   const { data: ytProducers = [] } = useQuery({
     queryKey: ['youtube-producers'],
     queryFn: () => base44.entities.YouTubeProducer.list('-created_date', 100),
