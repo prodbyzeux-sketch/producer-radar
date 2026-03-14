@@ -18,7 +18,7 @@ const navItems = [
   { path: '/YouTubeProducers', label: 'YouTube Producers', icon: Youtube },
   { path: '/PlacementProducers', label: 'Placement Producers', icon: Music2 },
   { path: '/Discovery', label: 'Discovery', icon: Radar },
-  { path: '/DailyContacts', label: 'Daily Contacts', icon: Users },
+  { path: '/DailyContacts', label: 'Daily Outreach', icon: Users },
   { path: '/Connections', label: 'Connections', icon: Handshake },
   { path: '/MessageGenerator', label: 'Message Generator', icon: MessageSquare },
 ];
