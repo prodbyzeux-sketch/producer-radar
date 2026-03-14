@@ -87,10 +87,10 @@ async function enrichProducer(name, song, artist) {
         add_context_from_internet: true,
         prompt: `Find contact info for music producer "${name}" who produced "${song}" by ${artist}.
 
-Search: "${name} producer instagram" and "${name} beats"
+Search: "${name} producer instagram" and "${name} beats" and "${name} genius"
 1. Instagram handle and follower count
 2. Contact email (from linktree, beacons, website)
-3. Other notable placements/collabs
+3. Go to their Genius producer page (genius.com/producers/${name.replace(/\s+/g, '-')}) and extract the ARTIST NAMES they have worked with (NOT song titles). Only include well-known artists (rappers, singers). Return only artist names separated by commas, e.g. "Future, Lil Baby, Rod Wave". Do NOT include song names, dashes, or extra text. If they have no notable placements or no Genius page, return empty string.
 
 Return only verified info. Leave empty if not found.`,
         response_json_schema: {
@@ -99,7 +99,7 @@ Return only verified info. Leave empty if not found.`,
             instagram_handle: { type: 'string' },
             instagram_followers: { type: 'number' },
             email: { type: 'string' },
-            highlights_placements: { type: 'string' },
+            highlights_placements: { type: 'string', description: 'Comma-separated artist names only, e.g. "Future, Lil Baby". No song titles.' },
           },
         },
       }),
@@ -184,6 +184,11 @@ export default function PlacementDiscovery() {
       );
 
       for (const { idx, p, info } of results) {
+        // Clean placements: only artist names, strip any "Artist - Song" patterns
+        let placements = info?.highlights_placements?.trim() || '';
+        // Remove anything after a dash (song names)
+        placements = placements.split(',').map(s => s.split(/\s*[-–]\s*/)[0].trim()).filter(Boolean).join(', ');
+
         enriched[idx] = {
           name: p.name,
           song: p.song,
@@ -191,7 +196,7 @@ export default function PlacementDiscovery() {
           instagram: info?.instagram_handle ? `@${info.instagram_handle.replace(/^@/, '')}` : '',
           followers_ig: info?.instagram_followers > 0 ? Math.round(info.instagram_followers) : 0,
           email: info?.email?.trim() || '',
-          highlights_placements: `${p.artist} - ${p.song}${info?.highlights_placements ? ', ' + info.highlights_placements : ''}`,
+          highlights_placements: placements,
         };
       }
     }
