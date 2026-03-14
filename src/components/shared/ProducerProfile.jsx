@@ -263,22 +263,28 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
                 <Input value={edited.instagram || ''} onChange={e => setEdited({ ...edited, instagram: e.target.value })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="@handle" /></div>
               <div><label className="text-xs text-[#71717a] mb-1.5 block">Email</label>
                 <Input value={edited.email || ''} onChange={e => setEdited({ ...edited, email: e.target.value })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="email@example.com" /></div>
-              <div><label className="text-xs text-[#71717a] mb-1.5 block">Followers IG</label>
-                <Input type="number" value={edited.followers_ig || ''} onChange={e => setEdited({ ...edited, followers_ig: parseInt(e.target.value) || 0 })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm" /></div>
-              <div><label className="text-xs text-[#71717a] mb-1.5 block">Priority Score</label>
+              <div><label className="text-xs text-[#71717a] mb-1.5 block">Phone</label>
+                <Input value={edited.phone || ''} onChange={e => setEdited({ ...edited, phone: e.target.value })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="+1 234 567 8900" /></div>
+              <div>
+                <label className="text-xs text-[#71717a] mb-1.5 block">
+                  Priority <span className="text-[#52525b]">(1–{type === 'youtube' ? 8 : 10})</span>
+                </label>
                 <div className="flex items-center gap-3">
-                  <Input type="number" min={1} max={10} value={edited.priority_score || ''} onChange={e => setEdited({ ...edited, priority_score: parseInt(e.target.value) || 0 })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm w-20" />
-                  <PriorityBar score={edited.priority_score || 0} />
+                  <Input
+                    type="number" min={1} max={type === 'youtube' ? 8 : 10}
+                    value={edited.priority || ''}
+                    onChange={e => {
+                      const val = parseInt(e.target.value) || 0;
+                      const max = type === 'youtube' ? 8 : 10;
+                      if (val > max) { import('sonner').then(({ toast }) => toast.error(`Max priority for ${type} producers is ${max}`)); return; }
+                      setEdited({ ...edited, priority: val });
+                    }}
+                    className="bg-[#0f0f10] border-[#27272a] text-white text-sm w-20"
+                    placeholder={`1–${type === 'youtube' ? 8 : 10}`}
+                  />
+                  <PriorityBar score={edited.priority || 0} max={type === 'youtube' ? 8 : 10} />
                 </div>
               </div>
-            </div>
-
-            {/* Scores */}
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-xs text-[#71717a] mb-1.5 block">YouTube Priority <span className="text-[#3f3f46]">(1–8)</span></label>
-                <Input type="number" min={1} max={8} value={edited.youtube_priority || ''} onChange={e => setEdited({ ...edited, youtube_priority: parseInt(e.target.value) || 0 })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="1–8" /></div>
-              <div><label className="text-xs text-[#71717a] mb-1.5 block">Placement Score <span className="text-[#3f3f46]">(1–10)</span></label>
-                <Input type="number" min={1} max={10} value={edited.placement_score || ''} onChange={e => setEdited({ ...edited, placement_score: parseInt(e.target.value) || 0 })} className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="1–10" /></div>
             </div>
 
             {/* Status + workflow */}

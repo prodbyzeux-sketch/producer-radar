@@ -10,7 +10,8 @@ import { toast } from 'sonner';
 const styles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Other'];
 
 export default function AddProducerDialog({ type, onClose, onAdded }) {
-  const [data, setData] = useState({ name: '', instagram: '', email: '', style: '', priority_score: 5 });
+  const maxPriority = type === 'youtube' ? 8 : 10;
+  const [data, setData] = useState({ name: '', instagram: '', email: '', style: '', priority: 5 });
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -73,8 +74,12 @@ export default function AddProducerDialog({ type, onClose, onAdded }) {
               </Select>
             </div>
             <div>
-              <label className="text-xs text-[#71717a] mb-1.5 block">Priority (1-10)</label>
-              <Input type="number" min={1} max={10} value={data.priority_score} onChange={e => setData({...data, priority_score: parseInt(e.target.value) || 5})}
+              <label className="text-xs text-[#71717a] mb-1.5 block">Priority (1–{maxPriority})</label>
+              <Input type="number" min={1} max={maxPriority} value={data.priority}
+                onChange={e => {
+                  const val = parseInt(e.target.value) || 1;
+                  setData({...data, priority: Math.min(val, maxPriority)});
+                }}
                 className="bg-[#0f0f10] border-[#27272a] text-white text-sm" />
             </div>
           </div>
