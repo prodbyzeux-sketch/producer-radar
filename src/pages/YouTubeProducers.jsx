@@ -85,11 +85,7 @@ export default function YouTubeProducers() {
   };
 
   const handleRowClick = (producer) => {
-    if (selectedIds.size > 0) {
-      toggleSelect(producer.id);
-    } else {
-      setSelected(producer);
-    }
+    setSelected(producer);
   };
 
   return (
