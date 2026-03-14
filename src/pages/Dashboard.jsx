@@ -89,21 +89,28 @@ export default function Dashboard() {
             {topProducers.length === 0 && (
               <div className="p-8 text-center text-[#3f3f46] text-sm">No producers yet. Start discovery!</div>
             )}
-            {topProducers.map((p, i) => (
-              <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#3f3f46] w-4 tabular-nums">{i + 1}</span>
-                  <div>
-                    <p className="text-sm font-medium text-white">{p.name}</p>
-                    <p className="text-xs text-[#71717a]">{p.instagram || 'No IG'}</p>
+            {topProducers.map((p, i) => {
+              const pType = ytProducers.find(y => y.id === p.id) ? 'yt' : 'pl';
+              return (
+                <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors group">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-[#3f3f46] w-4 tabular-nums">{i + 1}</span>
+                    <div>
+                      <p className="text-sm font-medium text-white">{p.name}</p>
+                      <p className="text-xs text-[#71717a]">{p.instagram || 'No IG'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PriorityBar score={p.priority || 0} max={10} />
+                    <StatusBadge status={p.status || 'por contactar'} />
+                    <button onClick={() => setEditProducer({ ...p, _type: pType })}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[#27272a] text-[#71717a] hover:text-white">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <PriorityBar score={p.priority || 0} max={10} />
-                  <StatusBadge status={p.status || 'por contactar'} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
 
