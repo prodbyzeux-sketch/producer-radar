@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 const statusColors = {
-  'por contactar': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+  'por contactar': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   'contactado': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
   'follow up 1': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
   'follow up 2': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
