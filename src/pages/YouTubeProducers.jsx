@@ -48,7 +48,7 @@ export default function YouTubeProducers() {
     },
   });
 
-  const HIDDEN = ['archivado', 'eliminado'];
+  const HIDDEN = ['archivado', 'eliminado', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5'];
   const filtered = producers.filter(p => {
     if (statusFilter === 'all' && HIDDEN.includes(p.status)) return false;
     const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.instagram?.toLowerCase().includes(search.toLowerCase());
@@ -154,13 +154,19 @@ export default function YouTubeProducers() {
       />
 
       <ProducerTable
-        showPlacements={false}
         producers={filtered}
+        columns={['name', 'instagram', 'youtube', 'style', 'status', 'priority']}
+        producerType="youtube"
         onRowClick={handleRowClick}
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
         onToggleAll={toggleAll}
         onToggleFavorite={p => updateMutation.mutate({ id: p.id, data: { favorite: !p.favorite } })}
+        onInstagramClick={p => {
+          const today = new Date().toISOString().split('T')[0];
+          const next = new Date(); next.setDate(next.getDate() + 7);
+          updateMutation.mutate({ id: p.id, data: { last_action: today, next_follow_up: next.toISOString().split('T')[0] } });
+        }}
       />
 
       {selected && (
