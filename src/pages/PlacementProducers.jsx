@@ -93,9 +93,17 @@ export default function PlacementProducers() {
           <h1 className="text-2xl font-bold text-white">Placement Producers</h1>
           <p className="text-[#71717a] text-sm mt-1">{producers.length} producers from song credits</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="bg-[#2563eb] hover:bg-[#3b82f6] text-white" size="sm">
-          <Plus className="w-4 h-4 mr-1.5" /> Add Producer
-        </Button>
+        <div className="flex items-center gap-2">
+          <CsvImportExport
+            producers={producers}
+            entity={base44.entities.PlacementProducer}
+            type="placement"
+            onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['placement-producers'] })}
+          />
+          <Button onClick={() => setShowAdd(true)} className="bg-[#2563eb] hover:bg-[#3b82f6] text-white" size="sm">
+            <Plus className="w-4 h-4 mr-1.5" /> Add Producer
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
