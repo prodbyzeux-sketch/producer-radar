@@ -33,11 +33,11 @@ export default function DailyContacts() {
 
   const { data: ytProducers = [] } = useQuery({
     queryKey: ['youtube-producers'],
-    queryFn: () => base44.entities.YouTubeProducer.list('-priority_score', 200),
+    queryFn: () => base44.entities.YouTubeProducer.list('-priority', 200),
   });
   const { data: plProducers = [] } = useQuery({
     queryKey: ['placement-producers'],
-    queryFn: () => base44.entities.PlacementProducer.list('-priority_score', 200),
+    queryFn: () => base44.entities.PlacementProducer.list('-priority', 200),
   });
 
   const markContactedYT = useMutation({
@@ -97,7 +97,7 @@ export default function DailyContacts() {
   const allPending = [
     ...ytProducers.filter(p => p.status === 'por contactar').map(p => ({ ...p, _type: 'yt' })),
     ...plProducers.filter(p => p.status === 'por contactar').map(p => ({ ...p, _type: 'pl' })),
-  ].sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0)).slice(0, 10);
+  ].sort((a, b) => (b.priority || 0) - (a.priority || 0)).slice(0, 10);
 
   // Follow-ups due (next_follow_up <= today, or status startsWith follow up with overdue date)
   const followUpsDue = [
@@ -144,7 +144,7 @@ export default function DailyContacts() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <PriorityBar score={p.priority_score || 0} />
+                    <PriorityBar score={p.priority || 0} max={p._type === 'yt' ? 8 : 10} />
                     <Button size="sm" variant="ghost" onClick={() => p._type === 'yt'
                       ? advanceFollowUpYT.mutate({ id: p.id, currentStatus: p.status, re_dms: p.re_dms })
                       : advanceFollowUpPL.mutate({ id: p.id, currentStatus: p.status, re_dms: p.re_dms })}
@@ -191,7 +191,7 @@ export default function DailyContacts() {
                   <span className="text-xs text-[#3f3f46]">{p.followers_ig ? `${p.followers_ig.toLocaleString()} followers` : 'No IG data'}</span>
                 </div>
               </div>
-              <PriorityBar score={p.priority_score || 0} />
+              <PriorityBar score={p.priority || 0} max={p._type === 'yt' ? 8 : 10} />
               <Button size="sm" variant="ghost"
                 onClick={() => p._type === 'yt' ? markContactedYT.mutate(p.id) : markContactedPL.mutate(p.id)}
                 className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">

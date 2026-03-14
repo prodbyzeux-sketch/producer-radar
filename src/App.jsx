@@ -14,6 +14,7 @@ import Discovery from '@/pages/Discovery';
 import DailyContacts from '@/pages/DailyContacts';
 import MessageGenerator from '@/pages/MessageGenerator';
 import Contacts from '@/pages/Contacts';
+import Connections from '@/pages/Connections';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +47,7 @@ const AuthenticatedApp = () => {
         <Route path="/DailyContacts" element={<DailyContacts />} />
         <Route path="/MessageGenerator" element={<MessageGenerator />} />
         <Route path="/Contacts" element={<Contacts />} />
+        <Route path="/Connections" element={<Connections />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

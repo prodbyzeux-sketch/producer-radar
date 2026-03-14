@@ -7,7 +7,7 @@ import {
   Radar, 
   Users, 
   MessageSquare,
-  BookUser,
+  Handshake,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -19,7 +19,7 @@ const navItems = [
   { path: '/PlacementProducers', label: 'Placement Producers', icon: Music2 },
   { path: '/Discovery', label: 'Discovery', icon: Radar },
   { path: '/DailyContacts', label: 'Daily Contacts', icon: Users },
-  { path: '/Contacts', label: 'Contacts', icon: BookUser },
+  { path: '/Connections', label: 'Connections', icon: Handshake },
   { path: '/MessageGenerator', label: 'Message Generator', icon: MessageSquare },
 ];
 
