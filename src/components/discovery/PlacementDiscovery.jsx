@@ -206,8 +206,13 @@ function ProducerPreviewCard({ producer, selected, onToggle }) {
 
       {producer.instagram && (
         <p className="text-purple-400 text-[11px] mt-1 flex items-center gap-1">
-          <Instagram className="w-3 h-3" /> {producer.instagram}
-          {producer.followers_ig > 0 && <span className="text-[#71717a]">({producer.followers_ig.toLocaleString()} followers)</span>}
+          <Instagram className="w-3 h-3" />
+          <span className="truncate">{producer.instagram}</span>
+          {producer.followers_unknown
+            ? <span className="text-amber-500 ml-1">(followers unknown)</span>
+            : producer.followers_ig > 0
+              ? <span className="text-[#71717a]">({producer.followers_ig.toLocaleString()} followers)</span>
+              : null}
         </p>
       )}
 
