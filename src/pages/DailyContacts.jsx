@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageCircle, RefreshCw, Check, Instagram, Mail, Clock, AlertTriangle } from 'lucide-react';
+import { MessageCircle, RefreshCw, Check, Instagram, Mail, Clock, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import PriorityBar from '@/components/shared/PriorityBar';
 import StatusBadge from '@/components/shared/StatusBadge';
+import QuickEditModal from '@/components/shared/QuickEditModal';
+import { useAutoAdvanceStatus } from '@/components/shared/useAutoAdvanceStatus';
 import { toast } from 'sonner';
 
 const styleColors = {
