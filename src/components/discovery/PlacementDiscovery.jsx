@@ -359,12 +359,21 @@ export default function PlacementDiscovery() {
           : [];
         const mergedCollabs = [...new Set([...existingCollabs, ...enrichedCollabs])].slice(0, 5).join(', ');
 
+        const followersRaw = info.instagram_followers;
+        // -1 = unknown, 0 = not found, >0 = actual count
+        const followersUnknown = followersRaw === -1 || followersRaw === null || followersRaw === undefined;
+        const followers = followersUnknown ? 0 : Math.round(followersRaw || 0);
+
+        // Filter out large producers (>30k followers)
+        if (!followersUnknown && followers > 30000) return null;
+
         return {
           ...p,
           instagram: ig,
-          followers_ig: info.instagram_followers > 0 ? Math.round(info.instagram_followers) : 0,
+          followers_ig: followers,
+          followers_unknown: followersUnknown,
           email: info.email?.trim() || '',
-          highlights_placements: placements,
+          highlights_placements: placements || 'unknown',
           top_collaborators: mergedCollabs,
           aka: info.aka || p.aka || '',
         };
