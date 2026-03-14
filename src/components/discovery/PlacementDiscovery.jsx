@@ -166,7 +166,7 @@ export default function PlacementDiscovery() {
 
     let added = 0, dupes = 0;
     for (const p of rawProducers) {
-      if (existingNames.has(p.name.toLowerCase())) { dupes++; continue; }
+      if (existingNames.has(p.name.toLowerCase())) { dupes++; continue; } // skip producer, not link
       const record = await base44.entities.PlacementProducer.create({
         name: p.name,
         song: p.song,
