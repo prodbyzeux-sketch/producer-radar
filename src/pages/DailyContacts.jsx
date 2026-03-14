@@ -32,6 +32,7 @@ function formatFollowUpDate(dateStr) {
 
 export default function DailyContacts() {
   const queryClient = useQueryClient();
+  const [editProducer, setEditProducer] = useState(null);
 
   const { data: ytProducers = [] } = useQuery({
     queryKey: ['youtube-producers'],
