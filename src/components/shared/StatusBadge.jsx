@@ -9,6 +9,7 @@ const statusColors = {
   'follow up 3': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   'follow up 4': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   'follow up 5': 'bg-red-500/10 text-red-400 border-red-500/20',
+  'connection': 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   'archivado': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
   'eliminado': 'bg-red-500/10 text-red-500 border-red-500/20',
   'running': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
