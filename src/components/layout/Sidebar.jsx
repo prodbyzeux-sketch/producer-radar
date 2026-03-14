@@ -7,6 +7,7 @@ import {
   Radar, 
   Users, 
   MessageSquare,
+  Contact,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -18,6 +19,7 @@ const navItems = [
   { path: '/PlacementProducers', label: 'Placement Producers', icon: Music2 },
   { path: '/Discovery', label: 'Discovery', icon: Radar },
   { path: '/DailyContacts', label: 'Daily Contacts', icon: Users },
+  { path: '/Contacts', label: 'Contacts', icon: Contact },
   { path: '/MessageGenerator', label: 'Message Generator', icon: MessageSquare },
 ];
 
