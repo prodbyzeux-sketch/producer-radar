@@ -160,7 +160,9 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     const a = document.createElement('a');
     a.href = url;
     a.download = `${type}-producers-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success(`Exported ${producers.length} producers`);
   };
