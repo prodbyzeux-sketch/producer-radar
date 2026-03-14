@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Radar, Users, UserCheck, Clock, TrendingUp, ArrowRight } from 'lucide-react';
+import { Radar, Users, UserCheck, Clock, TrendingUp, ArrowRight, MessageCircle, RefreshCw, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import StatCard from '@/components/dashboard/StatCard';
@@ -26,12 +26,23 @@ export default function Dashboard() {
 
   const today = new Date().toISOString().split('T')[0];
   const todayProducers = ytProducers.filter(p => p.created_date?.startsWith(today));
-  const highPriority = [...ytProducers, ...placementProducers].filter(p => (p.priority_score || 0) >= 7);
+  const highPriority = [...ytProducers, ...placementProducers].filter(p => (p.priority || 0) >= 7);
   const contacted = [...ytProducers, ...placementProducers].filter(p => p.status === 'contactado');
   const followUps = [...ytProducers, ...placementProducers].filter(p => p.status?.startsWith('follow up'));
 
+  // Daily DMs: not yet contacted
+  const dailyDMs = [...ytProducers, ...placementProducers]
+    .filter(p => p.status === 'por contactar')
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+    .slice(0, 8);
+
+  // Daily Follow Ups: next_follow_up = today
+  const dailyFollowUps = [...ytProducers, ...placementProducers]
+    .filter(p => p.next_follow_up === today && p.status?.startsWith('follow up'))
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
   const topProducers = [...ytProducers, ...placementProducers]
-    .sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0))
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
     .slice(0, 5);
 
   return (
@@ -78,7 +89,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <PriorityBar score={p.priority_score || 0} />
+                  <PriorityBar score={p.priority || 0} max={10} />
                   <StatusBadge status={p.status || 'por contactar'} />
                 </div>
               </div>
@@ -115,6 +126,80 @@ export default function Dashboard() {
                   </span>
                   <StatusBadge status={log.status || 'completed'} />
                 </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Daily Workflow */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Daily DMs */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="bg-[#18181b] border border-[#27272a] rounded-xl"
+        >
+          <div className="flex items-center justify-between p-5 border-b border-[#27272a]">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-[#3b82f6]" />
+              <h2 className="text-sm font-semibold text-white">Daily DMs</h2>
+              <span className="text-xs bg-[#2563eb]/10 text-[#3b82f6] border border-[#2563eb]/20 px-2 py-0.5 rounded-full">{dailyDMs.length}</span>
+            </div>
+            <Link to="/DailyContacts" className="flex items-center gap-1 text-xs text-[#3b82f6] hover:text-[#60a5fa] transition-colors">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-[#27272a]">
+            {dailyDMs.length === 0 && (
+              <div className="p-8 text-center text-[#3f3f46] text-sm">No producers to DM today</div>
+            )}
+            {dailyDMs.map(p => (
+              <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02]">
+                <div>
+                  <p className="text-sm font-medium text-white">{p.name}</p>
+                  {p.instagram && (
+                    <a href={`https://instagram.com/${p.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#e1306c] transition-colors mt-0.5">
+                      <Instagram className="w-3 h-3" />{p.instagram}
+                    </a>
+                  )}
+                </div>
+                <PriorityBar score={p.priority || 0} max={10} />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Daily Follow Ups */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-[#18181b] border border-[#27272a] rounded-xl"
+        >
+          <div className="flex items-center justify-between p-5 border-b border-[#27272a]">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-amber-400" />
+              <h2 className="text-sm font-semibold text-white">Daily Follow Ups</h2>
+              <span className="text-xs bg-amber-400/10 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded-full">{dailyFollowUps.length}</span>
+            </div>
+            <Link to="/DailyContacts" className="flex items-center gap-1 text-xs text-[#3b82f6] hover:text-[#60a5fa] transition-colors">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-[#27272a]">
+            {dailyFollowUps.length === 0 && (
+              <div className="p-8 text-center text-[#3f3f46] text-sm">No follow ups due today</div>
+            )}
+            {dailyFollowUps.map(p => (
+              <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02]">
+                <div>
+                  <p className="text-sm font-medium text-white">{p.name}</p>
+                  <p className="text-xs text-amber-400 mt-0.5">{p.status}</p>
+                </div>
+                <PriorityBar score={p.priority || 0} max={10} />
               </div>
             ))}
           </div>
