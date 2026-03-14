@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Instagram, Mail, Youtube, Save, Trash2, Plus, ExternalLink } from 'lucide-react';
+import { X, Instagram, Mail, Youtube, Save, Trash2, Plus, ExternalLink, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -228,7 +228,7 @@ function HighlightsInput({ value, onChange }) {
           }}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           onFocus={() => setShowSuggestions(true)}
-          placeholder={tags.length === 0 ? 'Add artist placements...' : 'Add more...'}
+          placeholder={tags.length === 0 ? 'Add artist name (e.g. Future)...' : 'Add more artists...'}
           className="w-full bg-transparent text-white text-sm outline-none placeholder:text-[#3f3f46]"
         />
         {showSuggestions && suggestions.length > 0 && (
@@ -281,9 +281,22 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
               <h2 className="text-xl font-bold text-white">{producer.name}</h2>
               <p className="text-sm text-[#71717a] mt-0.5">Producer Profile</p>
             </div>
-            <button onClick={onClose} className="text-[#71717a] hover:text-white transition-colors">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const parts = [producer.name, producer.instagram, producer.email].filter(Boolean);
+                  navigator.clipboard.writeText(parts.join(' | '));
+                  import('sonner').then(({ toast }) => toast.success('Contact info copied'));
+                }}
+                title="Copy contact info"
+                className="text-[#71717a] hover:text-white transition-colors p-1"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <button onClick={onClose} className="text-[#71717a] hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Content */}
@@ -417,7 +430,7 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
             )}
 
             <div>
-              <label className="text-xs text-[#71717a] mb-1.5 block">Highlights / Placements</label>
+              <label className="text-xs text-[#71717a] mb-1.5 block">Featured Placements <span className="text-[#52525b]">(artist names only)</span></label>
               <HighlightsInput value={edited.highlights_placements || ''} onChange={v => setEdited({ ...edited, highlights_placements: v })} />
             </div>
 
