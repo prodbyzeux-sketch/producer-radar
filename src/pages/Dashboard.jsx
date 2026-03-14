@@ -46,6 +46,11 @@ export default function Dashboard() {
     .filter(p => p.next_follow_up === today && p.status?.startsWith('follow up'))
     .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
+  useAutoAdvanceStatus(ytProducers, placementProducers, () => {
+    queryClient.invalidateQueries({ queryKey: ['youtube-producers'] });
+    queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+  });
+
   const topProducers = [...ytProducers, ...placementProducers]
     .sort((a, b) => (b.priority || 0) - (a.priority || 0))
     .slice(0, 5);
