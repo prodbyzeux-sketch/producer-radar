@@ -68,6 +68,10 @@ const YOUTUBE_FIELDS = [
   { key: 'phone', label: 'Phone' },
   { key: 'que_enviar', label: 'Que Enviar' },
   { key: 'donde_enviar', label: 'Donde Enviar' },
+  { key: 'last_action', label: 'Last Action' },
+  { key: 'next_follow_up', label: 'Next Follow Up' },
+  { key: 'favorite', label: 'Favorite' },
+  { key: 're_dms', label: 'Re DMs' },
   { key: 'notes', label: 'Notes' },
 ];
 
@@ -87,6 +91,10 @@ const PLACEMENT_FIELDS = [
   { key: 'donde_enviar', label: 'Donde Enviar' },
   { key: 'youtube_channel', label: 'YouTube Channel' },
   { key: 'youtube_channel_url', label: 'YouTube URL' },
+  { key: 'last_action', label: 'Last Action' },
+  { key: 'next_follow_up', label: 'Next Follow Up' },
+  { key: 'favorite', label: 'Favorite' },
+  { key: 're_dms', label: 'Re DMs' },
   { key: 'notes', label: 'Notes' },
 ];
 
@@ -110,6 +118,10 @@ const AUTO_ALIASES = {
   video_url: 'video_url',
   artist: 'artist', artista: 'artist',
   song: 'song', cancion: 'song', tema: 'song',
+  last_action: 'last_action', ultima_accion: 'last_action',
+  next_follow_up: 'next_follow_up', proximo_followup: 'next_follow_up', next_fu: 'next_follow_up',
+  favorite: 'favorite', favorito: 'favorite',
+  re_dms: 're_dms', redms: 're_dms',
 };
 
 function autoDetect(header) {
