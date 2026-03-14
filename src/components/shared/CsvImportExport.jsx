@@ -143,12 +143,16 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
     for (const [csvCol, dbKey] of Object.entries(mapping)) {
       if (dbKey === '__ignore__') continue;
       const val = rawRow[csvCol]?.trim();
-      if (val) out[dbKey] = NUMBER_FIELDS.has(dbKey) ? (parseInt(val) || 0) : val;
-    }
-    return out;
-  });
+      if (val) {
+        if (NUMBER_FIELDS.has(dbKey)) out[dbKey] = parseInt(val) || 0;
+        else if (BOOLEAN_FIELDS.has(dbKey)) out[dbKey] = val.toLowerCase() === 'true' || val === '1';
+        else out[dbKey] = val;
+      }
+      }
+      return out;
+      });
 
-  // Duplicate detection
+      // Duplicate detection
   const byIg = new Map(existingProducers.filter(p => p.instagram).map(p => [p.instagram.toLowerCase().replace('@', ''), true]));
   const byName = new Map(existingProducers.map(p => [p.name?.toLowerCase(), true]));
 
