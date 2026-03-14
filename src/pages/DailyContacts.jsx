@@ -127,6 +127,11 @@ export default function DailyContacts() {
 
   const today = new Date(); today.setHours(0,0,0,0);
 
+  useAutoAdvanceStatus(ytProducers, plProducers, () => {
+    queryClient.invalidateQueries({ queryKey: ['youtube-producers'] });
+    queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+  });
+
   // Daily DMs: solo por contactar, top por prioridad
   const dailyDMs = [
     ...ytProducers.filter(p => p.status === 'por contactar').map(p => ({ ...p, _type: 'yt' })),
