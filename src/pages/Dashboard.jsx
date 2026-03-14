@@ -259,6 +259,15 @@ export default function Dashboard() {
           </div>
         </div>
       </motion.div>
+      <QuickEditModal
+        producer={editProducer}
+        producerType={editProducer?._type}
+        onClose={() => setEditProducer(null)}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['youtube-producers'] });
+          queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
+        }}
+      />
     </div>
   );
 }
