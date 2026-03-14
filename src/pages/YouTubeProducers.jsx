@@ -9,6 +9,7 @@ import ProducerTable from '@/components/shared/ProducerTable';
 import ProducerProfile from '@/components/shared/ProducerProfile';
 import AddProducerDialog from '@/components/shared/AddProducerDialog';
 import BulkActionBar from '@/components/shared/BulkActionBar';
+import CsvImportExport from '@/components/shared/CsvImportExport';
 import { toast } from 'sonner';
 
 const statuses = ['all', 'por contactar', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5', 'archivado', 'eliminado'];
