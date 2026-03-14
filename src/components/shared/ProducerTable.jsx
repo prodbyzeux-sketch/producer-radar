@@ -1,8 +1,7 @@
 import React, { useRef } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader } from '@/components/ui/table';
 import StatusBadge from './StatusBadge';
-import PriorityBar from './PriorityBar';
-import { Instagram, Star } from 'lucide-react';
+import { Instagram, Star, Youtube } from 'lucide-react';
 
 const styleColors = {
   'Juice WRLD': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
@@ -24,7 +23,6 @@ function StyleTag({ value }) {
   );
 }
 
-// Format date as relative (today, tomorrow, X days, overdue)
 function formatFollowUp(dateStr) {
   if (!dateStr) return null;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -36,15 +34,25 @@ function formatFollowUp(dateStr) {
   return { label: `in ${diff}d`, color: 'text-[#71717a]' };
 }
 
+function PriorityBadge({ score, max = 10 }) {
+  if (!score) return <span className="text-[#3f3f46]">—</span>;
+  const pct = score / max;
+  const color = pct >= 0.75 ? 'text-emerald-400' : pct >= 0.5 ? 'text-amber-400' : 'text-[#71717a]';
+  return <span className={`text-xs font-bold tabular-nums ${color}`}>{score}<span className="text-[#3f3f46] font-normal">/{max}</span></span>;
+}
+
+// columns: array of column keys to show
+// Available: 'name', 'instagram', 'youtube', 'style', 'placements', 'priority', 'status', 'next_follow_up', 'type', 'last_action', 'phone'
 export default function ProducerTable({
   producers,
   onRowClick,
-  showArtist = false,
-  showPlacements = true,
+  columns = ['name', 'instagram', 'style', 'priority', 'status'],
+  producerType = 'youtube', // 'youtube' | 'placement' | 'mixed'
   selectedIds,
   onToggleSelect,
   onToggleAll,
   onToggleFavorite,
+  onInstagramClick, // (producer) => void — called when IG link clicked
 }) {
   const allSelected = producers.length > 0 && producers.every(p => selectedIds?.has(p.id));
   const someSelected = producers.some(p => selectedIds?.has(p.id));
@@ -55,11 +63,29 @@ export default function ProducerTable({
     if (e.shiftKey && lastClickedIdx.current !== null) {
       const start = Math.min(lastClickedIdx.current, idx);
       const end = Math.max(lastClickedIdx.current, idx);
-      producers.slice(start, end + 1).map(p => p.id).forEach(id => { if (!selectedIds?.has(id)) onToggleSelect?.(id); });
+      producers.slice(start, end + 1).map(p => p.id).forEach(id => {
+        if (!selectedIds?.has(id)) onToggleSelect?.(id);
+      });
     } else {
       onToggleSelect?.(producerId);
     }
     lastClickedIdx.current = idx;
+  };
+
+  const maxPriority = producerType === 'youtube' ? 8 : 10;
+
+  const colLabels = {
+    name: 'Name',
+    instagram: 'Instagram',
+    youtube: 'YouTube',
+    style: 'Style',
+    placements: 'Placements',
+    priority: 'Priority',
+    status: 'Status',
+    next_follow_up: 'Next FU',
+    type: 'Type',
+    last_action: 'Last Action',
+    phone: 'Phone',
   };
 
   return (
@@ -67,26 +93,20 @@ export default function ProducerTable({
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="border-[#27272a] hover:bg-transparent">
-              <TableHead className="w-9 pl-3">
+            <tr className="border-b border-[#27272a]">
+              <th className="w-9 pl-3 py-3">
                 <input type="checkbox" checked={allSelected}
                   ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
                   onChange={() => onToggleAll?.()}
                   className="w-3.5 h-3.5 rounded-sm cursor-pointer accent-[#3f3f46] opacity-40 hover:opacity-80 transition-opacity" />
-              </TableHead>
-              <TableHead className="w-7" />
-              <TableHead className="text-[#71717a] text-xs font-medium">Name</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">Instagram</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">Followers</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">Style</TableHead>
-              {showArtist && <TableHead className="text-[#71717a] text-xs font-medium">Artist</TableHead>}
-              {showPlacements && <TableHead className="text-[#71717a] text-xs font-medium">Placements</TableHead>}
-              <TableHead className="text-[#71717a] text-xs font-medium">YT</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">PS</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">Priority</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">Next FU</TableHead>
-              <TableHead className="text-[#71717a] text-xs font-medium">Status</TableHead>
-            </TableRow>
+              </th>
+              <th className="w-7 py-3" />
+              {columns.map(col => (
+                <th key={col} className="text-[#71717a] text-xs font-medium px-4 py-3 text-left whitespace-nowrap">
+                  {colLabels[col] || col}
+                </th>
+              ))}
+            </tr>
           </TableHeader>
           <TableBody>
             {producers.map((producer, idx) => {
@@ -95,6 +115,9 @@ export default function ProducerTable({
                 ? producer.highlights_placements.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
                 : [];
               const fu = formatFollowUp(producer.next_follow_up);
+              const la = formatFollowUp(producer.last_action);
+              // For mixed views, determine the per-row max
+              const rowMax = producer._type === 'yt' || producerType === 'youtube' ? 8 : 10;
 
               return (
                 <tr key={producer.id}
@@ -106,74 +129,73 @@ export default function ProducerTable({
                       className={`w-3.5 h-3.5 rounded-sm cursor-pointer transition-opacity ${isSelected ? 'accent-[#3b82f6] opacity-100' : 'accent-[#3f3f46] opacity-30 hover:opacity-70'}`} />
                   </td>
 
-                  {/* Favorite star */}
                   <td className="py-2.5 w-7" onClick={e => { e.stopPropagation(); onToggleFavorite?.(producer); }}>
                     <Star className={`w-3.5 h-3.5 transition-colors ${producer.favorite ? 'fill-amber-400 text-amber-400' : 'text-[#3f3f46] hover:text-amber-400'}`} />
                   </td>
 
-                  <td className="py-2.5 px-4 text-white font-medium text-sm whitespace-nowrap">{producer.name}</td>
-
-                  <td className="py-2.5 px-4" onClick={e => e.stopPropagation()}>
-                    {producer.instagram ? (
-                      <a href={`https://instagram.com/${producer.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-[#e1306c] transition-colors text-sm">
-                        <Instagram className="w-3.5 h-3.5" />{producer.instagram}
-                      </a>
-                    ) : <span className="text-[#3f3f46] text-sm">—</span>}
-                  </td>
-
-                  <td className="py-2.5 px-4 text-[#a1a1aa] text-sm tabular-nums whitespace-nowrap">
-                    {producer.followers_ig ? producer.followers_ig.toLocaleString() : '—'}
-                  </td>
-
-                  <td className="py-2.5 px-4"><StyleTag value={producer.style} /></td>
-
-                  {showArtist && <td className="py-2.5 px-4 text-[#a1a1aa] text-sm">{producer.artist || '—'}</td>}
-
-                  {showPlacements && (
-                    <td className="py-2.5 px-4">
-                      {placements.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {placements.map(a => <span key={a} className="px-1.5 py-0.5 bg-[#27272a] text-[#a1a1aa] rounded text-[10px]">{a}</span>)}
-                          {producer.highlights_placements?.split(',').length > 3 && (
-                            <span className="px-1.5 py-0.5 text-[#52525b] text-[10px]">+{producer.highlights_placements.split(',').length - 3}</span>
-                          )}
-                        </div>
-                      ) : <span className="text-[#3f3f46] text-sm">—</span>}
+                  {columns.map(col => (
+                    <td key={col} className="py-2.5 px-4">
+                      {col === 'name' && (
+                        <span className="text-white font-medium text-sm whitespace-nowrap">{producer.name}</span>
+                      )}
+                      {col === 'instagram' && (
+                        <span onClick={e => e.stopPropagation()}>
+                          {producer.instagram ? (
+                            <a
+                              href={`https://instagram.com/${producer.instagram.replace('@','')}`}
+                              target="_blank" rel="noopener noreferrer"
+                              onClick={() => onInstagramClick?.(producer)}
+                              className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-[#e1306c] transition-colors text-sm">
+                              <Instagram className="w-3.5 h-3.5" />{producer.instagram}
+                            </a>
+                          ) : <span className="text-[#3f3f46] text-sm">—</span>}
+                        </span>
+                      )}
+                      {col === 'youtube' && (
+                        <span onClick={e => e.stopPropagation()}>
+                          {producer.youtube_channel_url ? (
+                            <a href={producer.youtube_channel_url} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-red-400 transition-colors text-sm">
+                              <Youtube className="w-3.5 h-3.5" />
+                              <span className="truncate max-w-[120px]">{producer.youtube_channel || 'Channel'}</span>
+                            </a>
+                          ) : <span className="text-[#3f3f46] text-sm">—</span>}
+                        </span>
+                      )}
+                      {col === 'style' && <StyleTag value={producer.style} />}
+                      {col === 'placements' && (
+                        placements.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {placements.map(a => <span key={a} className="px-1.5 py-0.5 bg-[#27272a] text-[#a1a1aa] rounded text-[10px]">{a}</span>)}
+                            {producer.highlights_placements?.split(',').length > 3 && (
+                              <span className="px-1.5 py-0.5 text-[#52525b] text-[10px]">+{producer.highlights_placements.split(',').length - 3}</span>
+                            )}
+                          </div>
+                        ) : <span className="text-[#3f3f46] text-sm">—</span>
+                      )}
+                      {col === 'priority' && <PriorityBadge score={producer.priority} max={rowMax} />}
+                      {col === 'status' && <StatusBadge status={producer.status || 'por contactar'} />}
+                      {col === 'next_follow_up' && (
+                        fu ? <span className={`text-xs ${fu.color}`}>{fu.label}</span> : <span className="text-[#3f3f46]">—</span>
+                      )}
+                      {col === 'last_action' && (
+                        producer.last_action ? <span className="text-xs text-[#71717a]">{producer.last_action}</span> : <span className="text-[#3f3f46]">—</span>
+                      )}
+                      {col === 'type' && (
+                        <span className={`text-xs px-2 py-0.5 rounded border ${producer._type === 'yt' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                          {producer._type === 'yt' ? 'YouTube' : 'Placement'}
+                        </span>
+                      )}
+                      {col === 'phone' && (
+                        <span className="text-sm text-[#a1a1aa]">{producer.phone || <span className="text-[#3f3f46]">—</span>}</span>
+                      )}
                     </td>
-                  )}
-
-                  {/* YouTube Priority */}
-                  <td className="py-2.5 px-4">
-                    {producer.youtube_priority ? (
-                      <span className={`text-xs font-bold tabular-nums ${producer.youtube_priority >= 7 ? 'text-emerald-400' : producer.youtube_priority >= 5 ? 'text-amber-400' : 'text-[#71717a]'}`}>
-                        {producer.youtube_priority}
-                      </span>
-                    ) : <span className="text-[#3f3f46]">—</span>}
-                  </td>
-
-                  {/* Placement Score */}
-                  <td className="py-2.5 px-4">
-                    {producer.placement_score ? (
-                      <span className={`text-xs font-bold tabular-nums ${producer.placement_score >= 8 ? 'text-purple-400' : producer.placement_score >= 5 ? 'text-sky-400' : 'text-[#71717a]'}`}>
-                        {producer.placement_score}
-                      </span>
-                    ) : <span className="text-[#3f3f46]">—</span>}
-                  </td>
-
-                  <td className="py-2.5 px-4"><PriorityBar score={producer.priority_score || 0} /></td>
-
-                  {/* Next Follow Up */}
-                  <td className="py-2.5 px-4">
-                    {fu ? <span className={`text-xs ${fu.color}`}>{fu.label}</span> : <span className="text-[#3f3f46]">—</span>}
-                  </td>
-
-                  <td className="py-2.5 px-4"><StatusBadge status={producer.status || 'por contactar'} /></td>
+                  ))}
                 </tr>
               );
             })}
             {producers.length === 0 && (
-              <tr><td colSpan={13} className="text-center py-12 text-[#3f3f46] text-sm">No producers found</td></tr>
+              <tr><td colSpan={columns.length + 2} className="text-center py-12 text-[#3f3f46] text-sm">No producers found</td></tr>
             )}
           </TableBody>
         </Table>
