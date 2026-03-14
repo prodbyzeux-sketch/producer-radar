@@ -198,8 +198,13 @@ export default function DailyContacts() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <PriorityBar score={p.priority || 0} max={p._type === 'yt' ? 8 : 10} />
+                    <Button size="sm" variant="ghost"
+                      onClick={() => setEditProducer(p)}
+                      className="text-[#71717a] hover:text-white hover:bg-[#27272a] p-2">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
                     <Button size="sm" variant="ghost"
                       onClick={() => p._type === 'yt'
                         ? advanceFollowUpYT.mutate({ id: p.id, currentStatus: p.status, re_dms: p.re_dms })
