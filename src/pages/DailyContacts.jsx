@@ -90,12 +90,17 @@ export default function DailyContacts() {
   });
 
   // Advance follow up: siguiente paso, si re_dms=no y ya está en follow up 4+ → archivar
+  function getNextFollowUpStatus(currentStatus, re_dms) {
+    if (currentStatus === 'contactado') return 'follow up 1';
+    const followUps = ['follow up 1','follow up 2','follow up 3','follow up 4','follow up 5'];
+    const idx = followUps.indexOf(currentStatus);
+    const nextStatus = idx < followUps.length - 1 ? followUps[idx + 1] : 'archivado';
+    return (re_dms === 'no' && idx >= 3) ? 'archivado' : nextStatus;
+  }
+
   const advanceFollowUpYT = useMutation({
     mutationFn: ({ id, currentStatus, re_dms }) => {
-      const followUps = ['follow up 1','follow up 2','follow up 3','follow up 4','follow up 5'];
-      const idx = followUps.indexOf(currentStatus);
-      const nextStatus = idx < followUps.length - 1 ? followUps[idx + 1] : 'archivado';
-      const finalStatus = (re_dms === 'no' && idx >= 3) ? 'archivado' : nextStatus;
+      const finalStatus = getNextFollowUpStatus(currentStatus, re_dms);
       return base44.entities.YouTubeProducer.update(id, {
         status: finalStatus,
         last_action: new Date().toISOString().split('T')[0],
@@ -107,10 +112,7 @@ export default function DailyContacts() {
 
   const advanceFollowUpPL = useMutation({
     mutationFn: ({ id, currentStatus, re_dms }) => {
-      const followUps = ['follow up 1','follow up 2','follow up 3','follow up 4','follow up 5'];
-      const idx = followUps.indexOf(currentStatus);
-      const nextStatus = idx < followUps.length - 1 ? followUps[idx + 1] : 'archivado';
-      const finalStatus = (re_dms === 'no' && idx >= 3) ? 'archivado' : nextStatus;
+      const finalStatus = getNextFollowUpStatus(currentStatus, re_dms);
       return base44.entities.PlacementProducer.update(id, {
         status: finalStatus,
         last_action: new Date().toISOString().split('T')[0],
