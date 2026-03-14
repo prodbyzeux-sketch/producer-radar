@@ -210,15 +210,24 @@ export default function Dashboard() {
             {dailyFollowUps.length === 0 && (
               <div className="p-8 text-center text-[#3f3f46] text-sm">No follow ups due today</div>
             )}
-            {dailyFollowUps.map(p => (
-              <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02]">
-                <div>
-                  <p className="text-sm font-medium text-white">{p.name}</p>
-                  <p className="text-xs text-amber-400 mt-0.5">{p.status}</p>
+            {dailyFollowUps.map(p => {
+              const pType = ytProducers.find(y => y.id === p.id) ? 'yt' : 'pl';
+              return (
+                <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] group">
+                  <div>
+                    <p className="text-sm font-medium text-white">{p.name}</p>
+                    <p className="text-xs text-amber-400 mt-0.5">{p.status}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PriorityBar score={p.priority || 0} max={10} />
+                    <button onClick={() => setEditProducer({ ...p, _type: pType })}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[#27272a] text-[#71717a] hover:text-white">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <PriorityBar score={p.priority || 0} max={10} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </div>
