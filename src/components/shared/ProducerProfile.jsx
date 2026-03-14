@@ -303,7 +303,6 @@ export default function ProducerProfile({ producer, onClose, onSave, onDelete, t
             {/* Style + send */}
             <div className="grid grid-cols-2 gap-4">
               <MultiTagSelect label="Style" value={edited.style} storeKey="style" onChange={v => setEdited({ ...edited, style: v })} />
-              <DynamicSelect label="ReDms" value={edited.re_dms} storeKey="re_dms" onValueChange={v => setEdited({ ...edited, re_dms: v })} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

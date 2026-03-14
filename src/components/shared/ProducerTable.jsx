@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import StatusBadge from './StatusBadge';
 import PriorityBar from './PriorityBar';
-import { Instagram, Youtube } from 'lucide-react';
+import { Instagram, Star } from 'lucide-react';
 
 const styleColors = {
   'Juice WRLD': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
@@ -14,7 +14,6 @@ const styleColors = {
   'Other': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
 };
 
-// Parse comma-separated style string and render first tag only in table
 function StyleTag({ value }) {
   if (!value) return <span className="text-[#3f3f46]">—</span>;
   const first = value.split(',')[0].trim();
@@ -25,6 +24,18 @@ function StyleTag({ value }) {
   );
 }
 
+// Format date as relative (today, tomorrow, X days, overdue)
+function formatFollowUp(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff < 0) return { label: `${Math.abs(diff)}d overdue`, color: 'text-red-400' };
+  if (diff === 0) return { label: 'Today', color: 'text-amber-400' };
+  if (diff === 1) return { label: 'Tomorrow', color: 'text-emerald-400' };
+  return { label: `in ${diff}d`, color: 'text-[#71717a]' };
+}
+
 export default function ProducerTable({
   producers,
   onRowClick,
@@ -33,6 +44,7 @@ export default function ProducerTable({
   selectedIds,
   onToggleSelect,
   onToggleAll,
+  onToggleFavorite,
 }) {
   const allSelected = producers.length > 0 && producers.every(p => selectedIds?.has(p.id));
   const someSelected = producers.some(p => selectedIds?.has(p.id));
@@ -40,14 +52,10 @@ export default function ProducerTable({
 
   const handleCheckboxClick = (e, producerId, idx) => {
     e.stopPropagation();
-    // Shift-click: select range
     if (e.shiftKey && lastClickedIdx.current !== null) {
       const start = Math.min(lastClickedIdx.current, idx);
       const end = Math.max(lastClickedIdx.current, idx);
-      const rangeIds = producers.slice(start, end + 1).map(p => p.id);
-      rangeIds.forEach(id => {
-        if (!selectedIds?.has(id)) onToggleSelect?.(id);
-      });
+      producers.slice(start, end + 1).map(p => p.id).forEach(id => { if (!selectedIds?.has(id)) onToggleSelect?.(id); });
     } else {
       onToggleSelect?.(producerId);
     }
@@ -61,119 +69,111 @@ export default function ProducerTable({
           <TableHeader>
             <TableRow className="border-[#27272a] hover:bg-transparent">
               <TableHead className="w-9 pl-3">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
+                <input type="checkbox" checked={allSelected}
                   ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
                   onChange={() => onToggleAll?.()}
-                  className="w-3.5 h-3.5 rounded-sm cursor-pointer accent-[#3f3f46] opacity-40 hover:opacity-80 transition-opacity"
-                />
+                  className="w-3.5 h-3.5 rounded-sm cursor-pointer accent-[#3f3f46] opacity-40 hover:opacity-80 transition-opacity" />
               </TableHead>
+              <TableHead className="w-7" />
               <TableHead className="text-[#71717a] text-xs font-medium">Name</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Instagram</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Followers</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Style</TableHead>
               {showArtist && <TableHead className="text-[#71717a] text-xs font-medium">Artist</TableHead>}
               {showPlacements && <TableHead className="text-[#71717a] text-xs font-medium">Placements</TableHead>}
+              <TableHead className="text-[#71717a] text-xs font-medium">YT</TableHead>
+              <TableHead className="text-[#71717a] text-xs font-medium">PS</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Priority</TableHead>
+              <TableHead className="text-[#71717a] text-xs font-medium">Next FU</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {producers.map((producer, idx) => {
               const isSelected = selectedIds?.has(producer.id);
-              // Placements: comma-separated artist names
               const placements = producer.highlights_placements
                 ? producer.highlights_placements.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3)
                 : [];
+              const fu = formatFollowUp(producer.next_follow_up);
 
               return (
-                <tr
-                  key={producer.id}
-                  className={`border-b border-[#27272a] cursor-pointer transition-colors ${
-                    isSelected ? 'bg-[#1e2a3a]' : 'hover:bg-white/[0.02]'
-                  }`}
-                  onClick={() => onRowClick?.(producer)}
-                >
-                  {/* Checkbox cell — click stops propagation */}
-                  <td
-                    className="pl-3 py-2.5 w-9"
-                    onClick={e => handleCheckboxClick(e, producer.id, idx)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected || false}
-                      onChange={() => {}}
-                      className={`w-3.5 h-3.5 rounded-sm cursor-pointer transition-opacity ${isSelected ? 'accent-[#3b82f6] opacity-100' : 'accent-[#3f3f46] opacity-30 hover:opacity-70'}`}
-                    />
+                <tr key={producer.id}
+                  className={`border-b border-[#27272a] cursor-pointer transition-colors ${isSelected ? 'bg-[#1e2a3a]' : 'hover:bg-white/[0.02]'}`}
+                  onClick={() => onRowClick?.(producer)}>
+
+                  <td className="pl-3 py-2.5 w-9" onClick={e => handleCheckboxClick(e, producer.id, idx)}>
+                    <input type="checkbox" checked={isSelected || false} onChange={() => {}}
+                      className={`w-3.5 h-3.5 rounded-sm cursor-pointer transition-opacity ${isSelected ? 'accent-[#3b82f6] opacity-100' : 'accent-[#3f3f46] opacity-30 hover:opacity-70'}`} />
                   </td>
 
-                  <td className="py-2.5 px-4 text-white font-medium text-sm whitespace-nowrap">
-                    {producer.name}
+                  {/* Favorite star */}
+                  <td className="py-2.5 w-7" onClick={e => { e.stopPropagation(); onToggleFavorite?.(producer); }}>
+                    <Star className={`w-3.5 h-3.5 transition-colors ${producer.favorite ? 'fill-amber-400 text-amber-400' : 'text-[#3f3f46] hover:text-amber-400'}`} />
                   </td>
+
+                  <td className="py-2.5 px-4 text-white font-medium text-sm whitespace-nowrap">{producer.name}</td>
 
                   <td className="py-2.5 px-4" onClick={e => e.stopPropagation()}>
                     {producer.instagram ? (
-                      <a
-                        href={`https://instagram.com/${producer.instagram.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-[#e1306c] transition-colors text-sm"
-                      >
-                        <Instagram className="w-3.5 h-3.5" />
-                        {producer.instagram}
+                      <a href={`https://instagram.com/${producer.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-[#e1306c] transition-colors text-sm">
+                        <Instagram className="w-3.5 h-3.5" />{producer.instagram}
                       </a>
-                    ) : (
-                      <span className="text-[#3f3f46] text-sm">—</span>
-                    )}
+                    ) : <span className="text-[#3f3f46] text-sm">—</span>}
                   </td>
 
                   <td className="py-2.5 px-4 text-[#a1a1aa] text-sm tabular-nums whitespace-nowrap">
                     {producer.followers_ig ? producer.followers_ig.toLocaleString() : '—'}
                   </td>
 
-                  <td className="py-2.5 px-4">
-                    <StyleTag value={producer.style} />
-                  </td>
+                  <td className="py-2.5 px-4"><StyleTag value={producer.style} /></td>
 
-                  {showArtist && (
-                    <td className="py-2.5 px-4 text-[#a1a1aa] text-sm">{producer.artist || '—'}</td>
-                  )}
+                  {showArtist && <td className="py-2.5 px-4 text-[#a1a1aa] text-sm">{producer.artist || '—'}</td>}
 
-                  {/* Placements: artist tags */}
                   {showPlacements && (
                     <td className="py-2.5 px-4">
                       {placements.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {placements.map(a => (
-                            <span key={a} className="px-1.5 py-0.5 bg-[#27272a] text-[#a1a1aa] rounded text-[10px]">{a}</span>
-                          ))}
+                          {placements.map(a => <span key={a} className="px-1.5 py-0.5 bg-[#27272a] text-[#a1a1aa] rounded text-[10px]">{a}</span>)}
                           {producer.highlights_placements?.split(',').length > 3 && (
                             <span className="px-1.5 py-0.5 text-[#52525b] text-[10px]">+{producer.highlights_placements.split(',').length - 3}</span>
                           )}
                         </div>
-                      ) : (
-                        <span className="text-[#3f3f46] text-sm">—</span>
-                      )}
+                      ) : <span className="text-[#3f3f46] text-sm">—</span>}
                     </td>
                   )}
 
+                  {/* YouTube Priority */}
                   <td className="py-2.5 px-4">
-                    <PriorityBar score={producer.priority_score || 0} />
+                    {producer.youtube_priority ? (
+                      <span className={`text-xs font-bold tabular-nums ${producer.youtube_priority >= 7 ? 'text-emerald-400' : producer.youtube_priority >= 5 ? 'text-amber-400' : 'text-[#71717a]'}`}>
+                        {producer.youtube_priority}
+                      </span>
+                    ) : <span className="text-[#3f3f46]">—</span>}
                   </td>
 
+                  {/* Placement Score */}
                   <td className="py-2.5 px-4">
-                    <StatusBadge status={producer.status || 'por contactar'} />
+                    {producer.placement_score ? (
+                      <span className={`text-xs font-bold tabular-nums ${producer.placement_score >= 8 ? 'text-purple-400' : producer.placement_score >= 5 ? 'text-sky-400' : 'text-[#71717a]'}`}>
+                        {producer.placement_score}
+                      </span>
+                    ) : <span className="text-[#3f3f46]">—</span>}
                   </td>
+
+                  <td className="py-2.5 px-4"><PriorityBar score={producer.priority_score || 0} /></td>
+
+                  {/* Next Follow Up */}
+                  <td className="py-2.5 px-4">
+                    {fu ? <span className={`text-xs ${fu.color}`}>{fu.label}</span> : <span className="text-[#3f3f46]">—</span>}
+                  </td>
+
+                  <td className="py-2.5 px-4"><StatusBadge status={producer.status || 'por contactar'} /></td>
                 </tr>
               );
             })}
             {producers.length === 0 && (
-              <tr>
-                <td colSpan={showArtist ? (showPlacements ? 9 : 8) : (showPlacements ? 8 : 7)} className="text-center py-12 text-[#3f3f46] text-sm">
-                  No producers found
-                </td>
-              </tr>
+              <tr><td colSpan={13} className="text-center py-12 text-[#3f3f46] text-sm">No producers found</td></tr>
             )}
           </TableBody>
         </Table>
