@@ -14,7 +14,6 @@ import Discovery from '@/pages/Discovery';
 import DailyContacts from '@/pages/DailyContacts';
 import MessageGenerator from '@/pages/MessageGenerator';
 import Contacts from '@/pages/Contacts';
-import Contacts from '@/pages/Contacts';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
