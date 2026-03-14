@@ -130,6 +130,8 @@ function autoDetect(header) {
 }
 
 const NUMBER_FIELDS = new Set(['followers_ig', 'priority', 'youtube_subscribers']);
+const BOOLEAN_FIELDS = new Set(['favorite']);
+const DATE_FIELDS = new Set(['last_action', 'next_follow_up']);
 
 // ─── Mapping UI ───────────────────────────────────────────────────────────────
 function MappingModal({ headers, dbFields, initialMapping, existingProducers, rawRows, onConfirm, onCancel }) {
