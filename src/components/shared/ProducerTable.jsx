@@ -66,7 +66,7 @@ export default function ProducerTable({
                   checked={allSelected}
                   ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
                   onChange={() => onToggleAll?.()}
-                  className="w-3.5 h-3.5 rounded-sm cursor-pointer accent-[#3b82f6]"
+                  className="w-3.5 h-3.5 rounded-sm cursor-pointer accent-[#3f3f46] opacity-40 hover:opacity-80 transition-opacity"
                 />
               </TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Name</TableHead>
@@ -104,7 +104,7 @@ export default function ProducerTable({
                       type="checkbox"
                       checked={isSelected || false}
                       onChange={() => {}}
-                      className="w-3.5 h-3.5 rounded-sm cursor-pointer accent-[#3b82f6]"
+                      className={`w-3.5 h-3.5 rounded-sm cursor-pointer transition-opacity ${isSelected ? 'accent-[#3b82f6] opacity-100' : 'accent-[#3f3f46] opacity-30 hover:opacity-70'}`}
                     />
                   </td>
 
