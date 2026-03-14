@@ -60,10 +60,7 @@ export default function ProducerTable({ producers, onRowClick, showArtist = fals
                     className={`border-[#27272a] cursor-pointer transition-colors ${
                       isSelected ? 'bg-white/[0.03]' : 'hover:bg-white/[0.02]'
                     }`}
-                    onClick={() => {
-                      if (multiSelectMode) onToggleSelect?.(producer.id);
-                      else onRowClick?.(producer);
-                    }}
+                    onClick={() => onRowClick?.(producer)}
                   >
                     {multiSelectMode && (
                       <TableCell className="pl-3" onClick={e => { e.stopPropagation(); onToggleSelect?.(producer.id); }}>
