@@ -100,6 +100,20 @@ Return found=true if you got ANY useful information from the page.`,
   }
 }
 
+// Normalize Instagram: always return full URL or empty string
+function normalizeInstagram(raw) {
+  if (!raw) return '';
+  raw = raw.trim();
+  // Already a full URL
+  if (raw.startsWith('https://instagram.com/') || raw.startsWith('https://www.instagram.com/')) {
+    return raw.replace('https://www.instagram.com/', 'https://instagram.com/');
+  }
+  // Strip @ or @ prefix
+  const handle = raw.replace(/^@/, '').replace(/^instagram\.com\//, '');
+  if (!handle) return '';
+  return `https://instagram.com/${handle}`;
+}
+
 // Stage 2: Deep enrichment — Instagram search via multiple strategies, collaborators, aliases
 async function enrichProducer(name, song, artist, aka, existingCollabs) {
   try {
@@ -109,24 +123,30 @@ async function enrichProducer(name, song, artist, aka, existingCollabs) {
         add_context_from_internet: true,
         prompt: `Find detailed information for music producer "${name}"${aka ? ` (also known as "${aka}")` : ''} who produced "${song || 'unknown song'}" by ${artist || 'unknown artist'}.
 
-Search these sources in order:
-1. Genius artist page for "${name}" — look for Instagram link in external links and bio
-2. Search "${name} producer instagram" on Google
-3. Search "${aka || name} producer beats instagram" on Google  
-4. Search "${name} music producer contact" on Google
-5. Search "${name} beatmaker instagram" on Google
+Search these sources in STRICT priority order and stop at the first reliable result:
+1. Genius artist page for "${name}" — check External Links section for Instagram URL
+2. Genius song credits page — check bio or credits for Instagram links
+3. Producer bio on Genius — look for any Instagram mention
+4. Official website of "${name}" — look for Instagram link
+5. Search "${name} producer instagram" on Google
+
+CRITICAL Instagram rules:
+- Return the FULL Instagram URL: https://instagram.com/handle (NOT @handle)
+- If you only find a handle like @prodname, convert it to https://instagram.com/prodname
+- The Genius External Links section is the most reliable source
 
 Also find:
-- Top 5 collaborators: artists this producer has worked with most (based on placements and credits)
-- Notable placements: list of artists this producer has worked with (comma separated artist names only)
-- Instagram follower count if you can find the profile
+- Top 5 collaborators: artists this producer has worked with most
+- Notable placements: comma separated artist names only
+- Instagram follower count (number only)
 - Contact email if publicly available
-- Any AKA / alternate producer names you find
+- Any AKA / alternate producer names
+
+IMPORTANT: Only include producers with under 30,000 Instagram followers. If follower count is unavailable, set instagram_followers to -1 (unknown).
 
 ${existingCollabs ? `Already known collaborators: ${existingCollabs}` : ''}
 
-Be thorough. Try multiple search queries. Return the best Instagram handle you find.
-If Instagram has @ symbol include it. Leave empty string if truly not found after all searches.`,
+Return the best Instagram FULL URL you find. Leave empty string only if truly not found.`,
         response_json_schema: {
           type: 'object',
           properties: {

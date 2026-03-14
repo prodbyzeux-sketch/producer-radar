@@ -312,6 +312,24 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
     const { rows } = mappingState;
 
+    // Normalize instagram to full URL
+    const normalizeIg = (val) => {
+      if (!val) return '';
+      val = val.trim();
+      if (val.startsWith('https://instagram.com/') || val.startsWith('https://www.instagram.com/')) {
+        return val.replace('https://www.instagram.com/', 'https://instagram.com/');
+      }
+      const handle = val.replace(/^@/, '').replace(/^instagram\.com\//, '');
+      return handle ? `https://instagram.com/${handle}` : '';
+    };
+
+    // Extract name from instagram URL if name is empty
+    const nameFromIg = (ig) => {
+      if (!ig) return '';
+      const match = ig.match(/instagram\.com\/([^/?#]+)/);
+      return match ? match[1] : '';
+    };
+
     // Apply mapping to rows
     const mapped = rows.map(rawRow => {
       const out = {};
@@ -324,6 +342,12 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           else out[dbKey] = val;
         }
       }
+      // Normalize instagram to full URL
+      if (out.instagram) out.instagram = normalizeIg(out.instagram);
+      // If name is empty, derive from instagram handle
+      if (!out.name && out.instagram) {
+        out.name = nameFromIg(out.instagram);
+      }
       return out;
     }).filter(r => r.name);
 
@@ -334,34 +358,49 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     }
 
     // Load existing for dupe detection
-    const existing = await entity.list('-created_date', 2000);
-    const byIg = new Map(existing.filter(p => p.instagram).map(p => [p.instagram.toLowerCase().replace('@', ''), p]));
-    const byName = new Map(existing.map(p => [p.name?.toLowerCase(), p]));
+    const existing = await entity.list('-created_date', 5000);
+    // Index by instagram URL (normalized), name
+    const igToRecord = new Map(
+      existing.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), p])
+    );
+    const nameToRecord = new Map(existing.map(p => [p.name?.toLowerCase(), p]));
 
-    let created = 0, updated = 0, skipped = 0;
+    let created = 0, updated = 0;
+    const CHUNK = 100;
 
-    for (const row of mapped) {
-      const igKey = row.instagram?.replace('@', '').toLowerCase();
-      const matchByIg = igKey ? byIg.get(igKey) : null;
-      const matchByName = byName.get(row.name.toLowerCase());
-      const match = matchByIg || matchByName;
+    for (let i = 0; i < mapped.length; i += CHUNK) {
+      const chunk = mapped.slice(i, i + CHUNK);
 
-      if (match) {
-        const updates = {};
-        for (const [k, v] of Object.entries(row)) {
-          if (v !== '' && v !== null && v !== undefined) updates[k] = v;
+      for (const row of chunk) {
+        const igKey = row.instagram ? normalizeIg(row.instagram) : '';
+        const matchByIg = igKey ? igToRecord.get(igKey) : null;
+        const matchByName = nameToRecord.get(row.name?.toLowerCase());
+        const match = matchByIg || matchByName;
+
+        if (match) {
+          const updates = {};
+          for (const [k, v] of Object.entries(row)) {
+            if (v !== '' && v !== null && v !== undefined) updates[k] = v;
+          }
+          await entity.update(match.id, updates);
+          updated++;
+        } else {
+          const newRecord = { source: defaultSource, status: 'por contactar', ...row };
+          await entity.create(newRecord);
+          nameToRecord.set(row.name.toLowerCase(), newRecord);
+          if (igKey) igToRecord.set(igKey, newRecord);
+          created++;
         }
-        await entity.update(match.id, updates);
-        updated++;
-      } else {
-        await entity.create({ source: defaultSource, status: 'por contactar', ...row });
-        byName.set(row.name.toLowerCase(), row);
-        if (igKey) byIg.set(igKey, row);
-        created++;
+      }
+
+      // Progress toast every chunk
+      if (mapped.length > CHUNK) {
+        toast.loading(`Importing... ${Math.min(i + CHUNK, mapped.length)} / ${mapped.length}`, { id: 'csv-import-progress' });
       }
     }
 
-    toast.success(`Import done — ${created} created, ${updated} updated${skipped > 0 ? `, ${skipped} skipped` : ''}`);
+    toast.dismiss('csv-import-progress');
+    toast.success(`Import done — ${created} created, ${updated} updated`);
     setImporting(false);
     onImportComplete?.();
   };
