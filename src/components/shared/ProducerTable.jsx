@@ -29,6 +29,7 @@ export default function ProducerTable({
   producers,
   onRowClick,
   showArtist = false,
+  showPlacements = true,
   selectedIds,
   onToggleSelect,
   onToggleAll,
@@ -73,7 +74,7 @@ export default function ProducerTable({
               <TableHead className="text-[#71717a] text-xs font-medium">Followers</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Style</TableHead>
               {showArtist && <TableHead className="text-[#71717a] text-xs font-medium">Artist</TableHead>}
-              <TableHead className="text-[#71717a] text-xs font-medium">Placements</TableHead>
+              {showPlacements && <TableHead className="text-[#71717a] text-xs font-medium">Placements</TableHead>}
               <TableHead className="text-[#71717a] text-xs font-medium">Priority</TableHead>
               <TableHead className="text-[#71717a] text-xs font-medium">Status</TableHead>
             </TableRow>
@@ -140,20 +141,22 @@ export default function ProducerTable({
                   )}
 
                   {/* Placements: artist tags */}
-                  <td className="py-2.5 px-4">
-                    {placements.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {placements.map(a => (
-                          <span key={a} className="px-1.5 py-0.5 bg-[#27272a] text-[#a1a1aa] rounded text-[10px]">{a}</span>
-                        ))}
-                        {producer.highlights_placements?.split(',').length > 3 && (
-                          <span className="px-1.5 py-0.5 text-[#52525b] text-[10px]">+{producer.highlights_placements.split(',').length - 3}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-[#3f3f46] text-sm">—</span>
-                    )}
-                  </td>
+                  {showPlacements && (
+                    <td className="py-2.5 px-4">
+                      {placements.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {placements.map(a => (
+                            <span key={a} className="px-1.5 py-0.5 bg-[#27272a] text-[#a1a1aa] rounded text-[10px]">{a}</span>
+                          ))}
+                          {producer.highlights_placements?.split(',').length > 3 && (
+                            <span className="px-1.5 py-0.5 text-[#52525b] text-[10px]">+{producer.highlights_placements.split(',').length - 3}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-[#3f3f46] text-sm">—</span>
+                      )}
+                    </td>
+                  )}
 
                   <td className="py-2.5 px-4">
                     <PriorityBar score={producer.priority_score || 0} />
@@ -167,7 +170,7 @@ export default function ProducerTable({
             })}
             {producers.length === 0 && (
               <tr>
-                <td colSpan={showArtist ? 9 : 8} className="text-center py-12 text-[#3f3f46] text-sm">
+                <td colSpan={showArtist ? (showPlacements ? 9 : 8) : (showPlacements ? 8 : 7)} className="text-center py-12 text-[#3f3f46] text-sm">
                   No producers found
                 </td>
               </tr>
