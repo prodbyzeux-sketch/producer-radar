@@ -344,9 +344,8 @@ export default function PlacementDiscovery() {
       const results = await Promise.all(batch.map(async (p) => {
         const info = await enrichProducer(p.name, p.song, p.artist, p.aka, p.top_collaborators);
 
-        // Merge extracted Instagram with enriched
-        let ig = info.instagram_handle || p.instagram || '';
-        if (ig && !ig.startsWith('@')) ig = `@${ig}`;
+        // Merge extracted Instagram with enriched — always return full URL
+        let ig = normalizeInstagram(info.instagram_handle || p.instagram || '');
 
         let placements = info.highlights_placements?.trim() || '';
         placements = placements.split(',').map(s => s.split(/\s*[-–]\s*/)[0].trim()).filter(Boolean).join(', ');
