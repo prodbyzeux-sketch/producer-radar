@@ -64,7 +64,8 @@ const YOUTUBE_FIELDS = [
   { key: 'highlights_placements', label: 'Featured Placements' },
   { key: 'style', label: 'Style' },
   { key: 'status', label: 'Status' },
-  { key: 'priority_score', label: 'Priority Score' },
+  { key: 'priority', label: 'Priority' },
+  { key: 'phone', label: 'Phone' },
   { key: 'que_enviar', label: 'Que Enviar' },
   { key: 'donde_enviar', label: 'Donde Enviar' },
   { key: 'notes', label: 'Notes' },
@@ -75,12 +76,13 @@ const PLACEMENT_FIELDS = [
   { key: 'instagram', label: 'Instagram' },
   { key: 'email', label: 'Email' },
   { key: 'followers_ig', label: 'Followers (IG)' },
+  { key: 'phone', label: 'Phone' },
   { key: 'artist', label: 'Artist' },
   { key: 'song', label: 'Song' },
   { key: 'highlights_placements', label: 'Featured Placements' },
   { key: 'style', label: 'Style' },
   { key: 'status', label: 'Status' },
-  { key: 'priority_score', label: 'Priority Score' },
+  { key: 'priority', label: 'Priority' },
   { key: 'que_enviar', label: 'Que Enviar' },
   { key: 'donde_enviar', label: 'Donde Enviar' },
   { key: 'youtube_channel', label: 'YouTube Channel' },
@@ -99,7 +101,7 @@ const AUTO_ALIASES = {
   placements: 'highlights_placements', highlights: 'highlights_placements', highlights_placements: 'highlights_placements',
   artistas: 'highlights_placements', colaboraciones: 'highlights_placements',
   notes: 'notes', notas: 'notes',
-  priority: 'priority_score', priority_score: 'priority_score', prioridad: 'priority_score',
+  priority: 'priority', priority_score: 'priority', prioridad: 'priority',
   que_enviar: 'que_enviar', what_to_send: 'que_enviar',
   donde_enviar: 'donde_enviar', where_to_send: 'donde_enviar',
   youtube_channel: 'youtube_channel', canal: 'youtube_channel',
@@ -115,7 +117,7 @@ function autoDetect(header) {
   return AUTO_ALIASES[key] || null;
 }
 
-const NUMBER_FIELDS = new Set(['followers_ig', 'priority_score', 'youtube_subscribers']);
+const NUMBER_FIELDS = new Set(['followers_ig', 'priority', 'youtube_subscribers']);
 
 // ─── Mapping UI ───────────────────────────────────────────────────────────────
 function MappingModal({ headers, dbFields, initialMapping, existingProducers, rawRows, onConfirm, onCancel }) {
