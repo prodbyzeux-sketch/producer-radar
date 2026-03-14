@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Upload, Loader2 } from 'lucide-react';
+import { Download, Upload, Loader2, X, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── CSV helpers ──────────────────────────────────────────────────────────────
 function escapeCsvCell(val) {
@@ -15,9 +16,7 @@ function escapeCsvCell(val) {
 
 function toCsv(rows, fields) {
   const header = fields.map(f => f.label).join(',');
-  const body = rows.map(row =>
-    fields.map(f => escapeCsvCell(row[f.key])).join(',')
-  );
+  const body = rows.map(row => fields.map(f => escapeCsvCell(row[f.key])).join(','));
   return [header, ...body].join('\n');
 }
 
@@ -27,7 +26,7 @@ function parseCsvLine(line) {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') {
-      if (inQ && line[i + 1] === '"') { cur += '"'; i++; } // escaped quote
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
       else inQ = !inQ;
       continue;
     }
@@ -39,84 +38,27 @@ function parseCsvLine(line) {
 }
 
 function parseCsv(text) {
-  // Normalize line endings
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   const lines = normalized.split('\n');
-  if (lines.length < 2) return [];
-
-  const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase()
-    .replace(/\s+/g, '_')   // spaces to underscores
-    .replace(/[^\w]/g, '_') // remove special chars
-  );
-
-  return lines.slice(1)
-    .filter(l => l.trim())
-    .map(line => {
-      const cells = parseCsvLine(line);
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = (cells[i] || '').trim(); });
-      return obj;
-    });
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const headers = parseCsvLine(lines[0]).map(h => h.trim());
+  const rows = lines.slice(1).filter(l => l.trim()).map(line => {
+    const cells = parseCsvLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (cells[i] || '').trim(); });
+    return obj;
+  });
+  return { headers, rows };
 }
 
-// Normalize CSV header → entity field key (covers Notion exports and manual CSVs)
-const FIELD_ALIASES = {
-  // Name
-  name: 'name', producer: 'name', producer_name: 'name', nombre: 'name',
-  // Instagram
-  instagram: 'instagram', ig: 'instagram', ig_handle: 'instagram',
-  instagram_handle: 'instagram', instagram_url: 'instagram',
-  // Email
-  email: 'email', correo: 'email', contact_email: 'email',
-  // Followers
-  followers: 'followers_ig', followers_ig: 'followers_ig', ig_followers: 'followers_ig',
-  seguidores: 'followers_ig', seguidores_ig: 'followers_ig',
-  // Style
-  style: 'style', estilo: 'style',
-  // Status
-  status: 'status', estado: 'status',
-  // Placements
-  placements: 'highlights_placements', highlights: 'highlights_placements',
-  highlights_placements: 'highlights_placements', featured_placements: 'highlights_placements',
-  artistas: 'highlights_placements', artist_placements: 'highlights_placements',
-  colaboraciones: 'highlights_placements',
-  // Notes
-  notes: 'notes', notas: 'notes',
-  // Priority
-  priority: 'priority_score', priority_score: 'priority_score', prioridad: 'priority_score',
-  // Que/Donde enviar
-  que_enviar: 'que_enviar', what_to_send: 'que_enviar', qu__enviar: 'que_enviar',
-  donde_enviar: 'donde_enviar', where_to_send: 'donde_enviar', d_nde_enviar: 'donde_enviar',
-  // YouTube
-  youtube_channel: 'youtube_channel', canal: 'youtube_channel',
-  youtube_channel_url: 'youtube_channel_url', canal_url: 'youtube_channel_url',
-  youtube_subscribers: 'youtube_subscribers', suscriptores: 'youtube_subscribers',
-  video_url: 'video_url',
-  // Placement-specific
-  artist: 'artist', artista: 'artist',
-  song: 'song', canci_n: 'song', cancion: 'song', tema: 'song',
-};
-
-function mapCsvRow(row) {
-  const out = {};
-  for (const [rawKey, val] of Object.entries(row)) {
-    const key = FIELD_ALIASES[rawKey.toLowerCase().replace(/\s+/g, '_')] || rawKey;
-    if (val !== '') out[key] = val;
-  }
-  if (out.followers_ig) out.followers_ig = parseInt(out.followers_ig) || 0;
-  if (out.priority_score) out.priority_score = parseInt(out.priority_score) || 0;
-  if (out.youtube_subscribers) out.youtube_subscribers = parseInt(out.youtube_subscribers) || 0;
-  return out;
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── DB fields ────────────────────────────────────────────────────────────────
 const YOUTUBE_FIELDS = [
   { key: 'name', label: 'Name' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'email', label: 'Email' },
-  { key: 'followers_ig', label: 'Followers' },
+  { key: 'followers_ig', label: 'Followers (IG)' },
   { key: 'youtube_channel', label: 'YouTube Channel' },
-  { key: 'youtube_channel_url', label: 'YouTube Channel URL' },
+  { key: 'youtube_channel_url', label: 'YouTube URL' },
   { key: 'youtube_subscribers', label: 'YouTube Subscribers' },
   { key: 'video_url', label: 'Video URL' },
   { key: 'highlights_placements', label: 'Featured Placements' },
@@ -132,7 +74,7 @@ const PLACEMENT_FIELDS = [
   { key: 'name', label: 'Name' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'email', label: 'Email' },
-  { key: 'followers_ig', label: 'Followers' },
+  { key: 'followers_ig', label: 'Followers (IG)' },
   { key: 'artist', label: 'Artist' },
   { key: 'song', label: 'Song' },
   { key: 'highlights_placements', label: 'Featured Placements' },
@@ -142,19 +84,176 @@ const PLACEMENT_FIELDS = [
   { key: 'que_enviar', label: 'Que Enviar' },
   { key: 'donde_enviar', label: 'Donde Enviar' },
   { key: 'youtube_channel', label: 'YouTube Channel' },
-  { key: 'youtube_channel_url', label: 'YouTube Channel URL' },
+  { key: 'youtube_channel_url', label: 'YouTube URL' },
   { key: 'notes', label: 'Notes' },
 ];
 
+// Auto-detect mapping from CSV header to DB field key
+const AUTO_ALIASES = {
+  name: 'name', producer: 'name', producer_name: 'name', nombre: 'name',
+  instagram: 'instagram', ig: 'instagram', ig_handle: 'instagram', instagram_handle: 'instagram',
+  email: 'email', correo: 'email', mail: 'email',
+  followers: 'followers_ig', followers_ig: 'followers_ig', ig_followers: 'followers_ig', seguidores: 'followers_ig',
+  style: 'style', estilo: 'style',
+  status: 'status', estado: 'status',
+  placements: 'highlights_placements', highlights: 'highlights_placements', highlights_placements: 'highlights_placements',
+  artistas: 'highlights_placements', colaboraciones: 'highlights_placements',
+  notes: 'notes', notas: 'notes',
+  priority: 'priority_score', priority_score: 'priority_score', prioridad: 'priority_score',
+  que_enviar: 'que_enviar', what_to_send: 'que_enviar',
+  donde_enviar: 'donde_enviar', where_to_send: 'donde_enviar',
+  youtube_channel: 'youtube_channel', canal: 'youtube_channel',
+  youtube_channel_url: 'youtube_channel_url',
+  youtube_subscribers: 'youtube_subscribers', suscriptores: 'youtube_subscribers',
+  video_url: 'video_url',
+  artist: 'artist', artista: 'artist',
+  song: 'song', cancion: 'song', tema: 'song',
+};
+
+function autoDetect(header) {
+  const key = header.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
+  return AUTO_ALIASES[key] || null;
+}
+
+const NUMBER_FIELDS = new Set(['followers_ig', 'priority_score', 'youtube_subscribers']);
+
+// ─── Mapping UI ───────────────────────────────────────────────────────────────
+function MappingModal({ headers, dbFields, initialMapping, existingProducers, rawRows, onConfirm, onCancel }) {
+  const [mapping, setMapping] = useState(initialMapping);
+
+  // Build preview: apply mapping to raw rows
+  const previewRows = rawRows.slice(0, 50).map(rawRow => {
+    const out = {};
+    for (const [csvCol, dbKey] of Object.entries(mapping)) {
+      if (dbKey === '__ignore__') continue;
+      const val = rawRow[csvCol]?.trim();
+      if (val) out[dbKey] = NUMBER_FIELDS.has(dbKey) ? (parseInt(val) || 0) : val;
+    }
+    return out;
+  });
+
+  // Duplicate detection
+  const byIg = new Map(existingProducers.filter(p => p.instagram).map(p => [p.instagram.toLowerCase().replace('@', ''), true]));
+  const byName = new Map(existingProducers.map(p => [p.name?.toLowerCase(), true]));
+
+  const isDupe = (row) => {
+    const ig = row.instagram?.replace('@', '').toLowerCase();
+    if (ig && byIg.has(ig)) return true;
+    if (row.name && byName.has(row.name.toLowerCase())) return true;
+    return false;
+  };
+
+  const dupeCount = previewRows.filter(isDupe).length;
+  const newCount = previewRows.filter(r => r.name && !isDupe(r)).length;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={onCancel}>
+      <div
+        className="bg-[#18181b] border border-[#27272a] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-[#27272a]">
+          <div>
+            <h2 className="text-base font-semibold text-white">Map CSV Columns</h2>
+            <p className="text-xs text-[#71717a] mt-0.5">{rawRows.length} rows · {headers.length} columns detected</p>
+          </div>
+          <button onClick={onCancel} className="text-[#71717a] hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Mapping table */}
+        <div className="overflow-y-auto flex-1 p-5 space-y-5">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-[#71717a] uppercase tracking-wider">Column Mapping</p>
+            <div className="bg-[#0f0f10] border border-[#27272a] rounded-lg overflow-hidden">
+              <div className="grid grid-cols-2 gap-0 text-[10px] font-medium text-[#52525b] uppercase tracking-wider px-4 py-2 border-b border-[#27272a]">
+                <span>CSV Column</span>
+                <span>Maps to Database Field</span>
+              </div>
+              {headers.map(h => (
+                <div key={h} className="grid grid-cols-2 items-center gap-4 px-4 py-2 border-b border-[#1e1e22] last:border-b-0">
+                  <span className="text-sm text-[#a1a1aa] font-mono truncate">{h}</span>
+                  <select
+                    value={mapping[h] || '__ignore__'}
+                    onChange={e => setMapping(m => ({ ...m, [h]: e.target.value }))}
+                    className="bg-[#18181b] border border-[#27272a] text-white text-xs rounded-md px-2 py-1.5 outline-none focus:border-[#3f3f46]"
+                  >
+                    <option value="__ignore__">— Ignore —</option>
+                    {dbFields.map(f => (
+                      <option key={f.key} value={f.key}>{f.label}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-[#71717a] uppercase tracking-wider">
+                Preview (first {Math.min(rawRows.length, 50)} rows)
+              </p>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-green-400">{newCount} new</span>
+                {dupeCount > 0 && <span className="text-amber-400 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{dupeCount} dupes</span>}
+              </div>
+            </div>
+            <div className="bg-[#0f0f10] border border-[#27272a] rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              {previewRows.filter(r => r.name).slice(0, 20).map((row, i) => {
+                const dupe = isDupe(row);
+                return (
+                  <div key={i} className={`flex items-center gap-3 px-4 py-2 border-b border-[#1e1e22] last:border-b-0 ${dupe ? 'opacity-50' : ''}`}>
+                    {dupe
+                      ? <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      : <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+                    <span className="text-sm text-white font-medium">{row.name}</span>
+                    {row.instagram && <span className="text-xs text-[#71717a]">{row.instagram}</span>}
+                    {row.status && <span className="text-xs text-[#52525b]">{row.status}</span>}
+                    {dupe && <span className="text-[10px] text-amber-500 ml-auto">duplicate</span>}
+                  </div>
+                );
+              })}
+              {previewRows.filter(r => r.name).length === 0 && (
+                <p className="text-center text-[#52525b] text-sm py-4">No rows with a Name mapped yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-5 border-t border-[#27272a]">
+          <p className="text-xs text-[#71717a]">
+            {rawRows.length} total rows · {newCount} will be imported · {dupeCount} will be updated
+          </p>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={onCancel} className="text-[#a1a1aa] hover:text-white">Cancel</Button>
+            <Button size="sm" onClick={() => onConfirm(mapping)}
+              className="bg-[#2563eb] hover:bg-[#3b82f6] text-white"
+              disabled={!Object.values(mapping).some(v => v === 'name')}>
+              Import {rawRows.length} Rows
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function CsvImportExport({ producers, entity, type = 'youtube', onImportComplete }) {
   const fileRef = useRef(null);
   const [importing, setImporting] = useState(false);
+  const [mappingState, setMappingState] = useState(null); // { headers, rows, initialMapping }
 
-  const fields = type === 'youtube' ? YOUTUBE_FIELDS : PLACEMENT_FIELDS;
+  const dbFields = type === 'youtube' ? YOUTUBE_FIELDS : PLACEMENT_FIELDS;
+  const defaultSource = type === 'youtube' ? 'YouTube' : 'Placements';
 
-  // ── Export ─────────────────────────────────────────────────────────────────
+  // ── Export ────────────────────────────────────────────────────────────────
   const handleExport = () => {
-    const csv = toCsv(producers, fields);
+    const csv = toCsv(producers, dbFields);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -167,35 +266,63 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     toast.success(`Exported ${producers.length} producers`);
   };
 
-  // ── Import ─────────────────────────────────────────────────────────────────
-  const handleImport = async (e) => {
+  // ── File picked → parse → show mapping modal ─────────────────────────────
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    setImporting(true);
 
     const text = await file.text();
-    const rows = parseCsv(text);
-    if (!rows.length) { toast.error('No data found in CSV'); setImporting(false); return; }
+    const { headers, rows } = parseCsv(text);
+    if (!rows.length) { toast.error('No data found in CSV'); return; }
+
+    // Auto-detect mapping
+    const initialMapping = {};
+    for (const h of headers) {
+      initialMapping[h] = autoDetect(h) || '__ignore__';
+    }
+
+    setMappingState({ headers, rows, initialMapping });
+  };
+
+  // ── Confirmed mapping → import ────────────────────────────────────────────
+  const handleConfirmImport = async (mapping) => {
+    setMappingState(null);
+    setImporting(true);
+
+    const { rows } = mappingState;
+
+    // Apply mapping to rows
+    const mapped = rows.map(rawRow => {
+      const out = {};
+      for (const [csvCol, dbKey] of Object.entries(mapping)) {
+        if (dbKey === '__ignore__') continue;
+        const val = rawRow[csvCol]?.trim();
+        if (val) out[dbKey] = NUMBER_FIELDS.has(dbKey) ? (parseInt(val) || 0) : val;
+      }
+      return out;
+    }).filter(r => r.name);
+
+    if (!mapped.length) {
+      toast.error('No rows with a Name field found after mapping');
+      setImporting(false);
+      return;
+    }
 
     // Load existing for dupe detection
     const existing = await entity.list('-created_date', 2000);
-    const byName = new Map(existing.map(p => [p.name?.toLowerCase(), p]));
     const byIg = new Map(existing.filter(p => p.instagram).map(p => [p.instagram.toLowerCase().replace('@', ''), p]));
+    const byName = new Map(existing.map(p => [p.name?.toLowerCase(), p]));
 
     let created = 0, updated = 0, skipped = 0;
 
-    for (const rawRow of rows) {
-      const row = mapCsvRow(rawRow);
-      if (!row.name) { skipped++; continue; }
-
+    for (const row of mapped) {
       const igKey = row.instagram?.replace('@', '').toLowerCase();
-      const existing_byIg = igKey ? byIg.get(igKey) : null;
-      const existing_byName = byName.get(row.name.toLowerCase());
-      const match = existing_byIg || existing_byName;
+      const matchByIg = igKey ? byIg.get(igKey) : null;
+      const matchByName = byName.get(row.name.toLowerCase());
+      const match = matchByIg || matchByName;
 
       if (match) {
-        // Update — merge, don't overwrite with empty values
         const updates = {};
         for (const [k, v] of Object.entries(row)) {
           if (v !== '' && v !== null && v !== undefined) updates[k] = v;
@@ -203,7 +330,7 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
         await entity.update(match.id, updates);
         updated++;
       } else {
-        await entity.create({ source: type === 'youtube' ? 'YouTube' : 'Placements', status: 'por contactar', ...row });
+        await entity.create({ source: defaultSource, status: 'por contactar', ...row });
         byName.set(row.name.toLowerCase(), row);
         if (igKey) byIg.set(igKey, row);
         created++;
@@ -216,28 +343,44 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        onClick={handleExport}
-        disabled={producers.length === 0}
-        variant="outline"
-        size="sm"
-        className="border-[#27272a] text-[#a1a1aa] hover:text-white hover:bg-[#27272a] gap-1.5"
-      >
-        <Download className="w-3.5 h-3.5" />
-        Export CSV
-      </Button>
-      <Button
-        onClick={() => fileRef.current?.click()}
-        disabled={importing}
-        variant="outline"
-        size="sm"
-        className="border-[#27272a] text-[#a1a1aa] hover:text-white hover:bg-[#27272a] gap-1.5"
-      >
-        {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-        Import CSV
-      </Button>
-      <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={handleExport}
+          disabled={producers.length === 0}
+          variant="outline"
+          size="sm"
+          className="border-[#27272a] text-[#a1a1aa] hover:text-white hover:bg-[#27272a] gap-1.5"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Export CSV
+        </Button>
+        <Button
+          onClick={() => fileRef.current?.click()}
+          disabled={importing}
+          variant="outline"
+          size="sm"
+          className="border-[#27272a] text-[#a1a1aa] hover:text-white hover:bg-[#27272a] gap-1.5"
+        >
+          {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          Import Producers from CSV
+        </Button>
+        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+      </div>
+
+      <AnimatePresence>
+        {mappingState && (
+          <MappingModal
+            headers={mappingState.headers}
+            dbFields={dbFields}
+            initialMapping={mappingState.initialMapping}
+            existingProducers={producers}
+            rawRows={mappingState.rows}
+            onConfirm={handleConfirmImport}
+            onCancel={() => setMappingState(null)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

@@ -68,15 +68,23 @@ export default function PlacementProducers() {
     }
   };
 
+  const batchOp = async (ids, fn) => {
+    const arr = [...ids];
+    for (let i = 0; i < arr.length; i += 5) {
+      await Promise.all(arr.slice(i, i + 5).map(id => fn(id)));
+      if (i + 5 < arr.length) await new Promise(r => setTimeout(r, 300));
+    }
+  };
+
   const handleBulkUpdate = async (data) => {
-    await Promise.all([...selectedIds].map(id => base44.entities.PlacementProducer.update(id, data)));
+    await batchOp(selectedIds, id => base44.entities.PlacementProducer.update(id, data));
     queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
     toast.success(`Updated ${selectedIds.size} producers`);
     setSelectedIds(new Set());
   };
 
   const handleBulkDelete = async () => {
-    await Promise.all([...selectedIds].map(id => base44.entities.PlacementProducer.delete(id)));
+    await batchOp(selectedIds, id => base44.entities.PlacementProducer.delete(id));
     queryClient.invalidateQueries({ queryKey: ['placement-producers'] });
     toast.success(`Deleted ${selectedIds.size} producers`);
     setSelectedIds(new Set());
