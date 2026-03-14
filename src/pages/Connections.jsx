@@ -7,7 +7,7 @@ import ProducerTable from '@/components/shared/ProducerTable';
 import ProducerProfile from '@/components/shared/ProducerProfile';
 import { toast } from 'sonner';
 
-// Connections: only producers with status "contactado" (written to but not yet in follow-up chain)
+// Connections: producers with status "connection" (active real relationship)
 
 export default function Connections() {
   const [search, setSearch] = useState('');
@@ -55,8 +55,8 @@ export default function Connections() {
   };
 
   const allConnections = [
-    ...ytProducers.filter(p => p.status === 'contactado').map(p => ({ ...p, _type: 'yt' })),
-    ...plProducers.filter(p => p.status === 'contactado').map(p => ({ ...p, _type: 'pl' })),
+    ...ytProducers.filter(p => p.status === 'connection').map(p => ({ ...p, _type: 'yt' })),
+    ...plProducers.filter(p => p.status === 'connection').map(p => ({ ...p, _type: 'pl' })),
   ].filter(p => {
     const q = search.toLowerCase();
     return !search || p.name?.toLowerCase().includes(q) || p.instagram?.toLowerCase().includes(q);
@@ -67,7 +67,7 @@ export default function Connections() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Connections</h1>
-          <p className="text-[#71717a] text-sm mt-1">{allConnections.length} productores contactados esperando respuesta</p>
+          <p className="text-[#71717a] text-sm mt-1">{allConnections.length} conexiones activas</p>
         </div>
       </div>
 
