@@ -255,7 +255,9 @@ export default function DiscoveryRunner() {
         const ytChannelUrl = p.channel_url || contacts?.youtube_channel_url || '';
         const ytSubscribers = parseSubscribers(contacts?.youtube_subscribers || p.channel_subscribers);
         const videoUrl = p.video_url || '';
-        const highlights = contacts?.highlights_placements || '';
+        // Clean: artist names only, strip any "Artist - Song" patterns
+        const rawHighlights = contacts?.highlights_placements || '';
+        const highlights = rawHighlights.split(',').map(s => s.split(/\s*[-–]\s*/)[0].trim()).filter(Boolean).join(', ');
         const igBio = contacts?.instagram_bio || '';
 
         // Post-extraction follower filter

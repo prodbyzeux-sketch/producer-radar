@@ -144,6 +144,7 @@ export default function YouTubeProducers() {
       />
 
       <ProducerTable
+              showPlacements={false}
         producers={filtered}
         onRowClick={handleRowClick}
         selectedIds={selectedIds}
