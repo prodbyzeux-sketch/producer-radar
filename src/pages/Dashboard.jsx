@@ -1,12 +1,14 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Radar, Users, UserCheck, Clock, TrendingUp, ArrowRight, MessageCircle, RefreshCw, Instagram } from 'lucide-react';
+import { Radar, UserCheck, Clock, TrendingUp, ArrowRight, MessageCircle, RefreshCw, Instagram, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import StatCard from '@/components/dashboard/StatCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import PriorityBar from '@/components/shared/PriorityBar';
+import QuickEditModal from '@/components/shared/QuickEditModal';
+import { useAutoAdvanceStatus } from '@/components/shared/useAutoAdvanceStatus';
 
 export default function Dashboard() {
   const { data: ytProducers = [] } = useQuery({
