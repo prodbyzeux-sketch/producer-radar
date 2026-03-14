@@ -124,8 +124,10 @@ Search context: "${query}"
 Find:
 1. Instagram handle (search "${producerName} producer instagram" or "${channelName} instagram beats")
 2. Contact email (from video description, channel about page, Linktree/Beacons links)
-3. Known artist placements or collabs
+3. Check their Genius producer page (genius.com/producers/${producerName.replace(/\s+/g, '-')}) — if found, extract ONLY the ARTIST NAMES they have notable credits with (NOT song titles). Only list major/well-known artists. Return as comma-separated names ONLY, e.g. "Future, Lil Baby". If no Genius page or no notable placements found, return empty string.
 4. YouTube channel subscriber count
+
+IMPORTANT for placements: only return artist names like "Future, Rod Wave". Do NOT include song titles, dashes, or any extra text. If this is a YouTube type beat producer with no notable placements, leave highlights_placements empty.
 
 Return only real, verified info you actually found. Leave empty if not found.
 
@@ -144,7 +146,7 @@ Rules:
         email: { type: 'string' },
         youtube_channel_url: { type: 'string' },
         youtube_subscribers: { type: 'number', description: 'Subscriber count as integer' },
-        highlights_placements: { type: 'string' },
+        highlights_placements: { type: 'string', description: 'Artist names only, comma-separated. No song titles.' },
         found_via: { type: 'string' },
       },
     },
