@@ -21,23 +21,42 @@ function toCsv(rows, fields) {
   return [header, ...body].join('\n');
 }
 
-function parseCsv(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
-  return lines.slice(1).map(line => {
-    const cells = [];
-    let cur = '', inQ = false;
-    for (const ch of line) {
-      if (ch === '"') { inQ = !inQ; continue; }
-      if (ch === ',' && !inQ) { cells.push(cur); cur = ''; continue; }
-      cur += ch;
+function parseCsvLine(line) {
+  const cells = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; } // escaped quote
+      else inQ = !inQ;
+      continue;
     }
-    cells.push(cur);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (cells[i] || '').trim(); });
-    return obj;
-  });
+    if (ch === ',' && !inQ) { cells.push(cur); cur = ''; continue; }
+    cur += ch;
+  }
+  cells.push(cur);
+  return cells;
+}
+
+function parseCsv(text) {
+  // Normalize line endings
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  const lines = normalized.split('\n');
+  if (lines.length < 2) return [];
+
+  const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase()
+    .replace(/\s+/g, '_')   // spaces to underscores
+    .replace(/[^\w]/g, '_') // remove special chars
+  );
+
+  return lines.slice(1)
+    .filter(l => l.trim())
+    .map(line => {
+      const cells = parseCsvLine(line);
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (cells[i] || '').trim(); });
+      return obj;
+    });
 }
 
 // Normalize CSV header → entity field key
