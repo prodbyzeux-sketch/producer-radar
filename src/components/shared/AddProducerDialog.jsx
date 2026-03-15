@@ -7,8 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
-const styles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Other'];
-
 export default function AddProducerDialog({ type, onClose, onAdded }) {
   const maxPriority = type === 'youtube' ? 8 : 10;
   const [data, setData] = useState({ name: '', instagram: '', email: '', style: '', priority: 5 });
