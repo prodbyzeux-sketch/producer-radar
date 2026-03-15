@@ -210,6 +210,30 @@ const NUMBER_FIELDS = new Set(['followers_ig', 'priority', 'youtube_subscribers'
 const BOOLEAN_FIELDS = new Set(['favorite']);
 const DATE_FIELDS = new Set(['last_action', 'next_follow_up']);
 
+// Parse date from multiple formats → YYYY-MM-DD or ''
+function parseDate(val) {
+  if (!val) return '';
+  const s = val.trim();
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // DD/MM/YYYY or DD-MM-YYYY
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+  // MM/DD/YYYY
+  const mdy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+  // Try native Date parse as fallback
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  return '';
+}
+
+// Parse boolean: true/1/si/sí/yes → true, false/0/no → false
+function parseBoolean(val) {
+  const s = String(val).toLowerCase().trim();
+  return ['true', '1', 'si', 'sí', 'yes'].includes(s);
+}
+
 // ─── Mapping UI ───────────────────────────────────────────────────────────────
 function MappingModal({ headers, dbFields, initialMapping, existingProducers, rawRows, onConfirm, onCancel }) {
   const [mapping, setMapping] = useState(initialMapping);

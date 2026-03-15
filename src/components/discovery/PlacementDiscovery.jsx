@@ -7,7 +7,7 @@ import { Music2, Loader2, Check, X, Plus, Zap, Instagram, Star, Users } from 'lu
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BATCH_SIZE = 4;
+const BATCH_SIZE = 8;
 const EXTRACT_TIMEOUT = 20000;
 const ENRICH_TIMEOUT = 20000;
 
