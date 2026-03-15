@@ -76,17 +76,10 @@ export default function AddProducerDialog({ type, onClose, onAdded }) {
             </div>
           </div>
           {type === 'placement' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-[#71717a] mb-1.5 block">Song</label>
-                <Input value={data.song || ''} onChange={e => setData({...data, song: e.target.value})}
-                  className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="Song title" />
-              </div>
-              <div>
-                <label className="text-xs text-[#71717a] mb-1.5 block">Artist</label>
-                <Input value={data.artist || ''} onChange={e => setData({...data, artist: e.target.value})}
-                  className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="Artist name" />
-              </div>
+            <div>
+              <label className="text-xs text-[#71717a] mb-1.5 block">Song</label>
+              <Input value={data.song || ''} onChange={e => setData({...data, song: e.target.value})}
+                className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="Song title" />
             </div>
           )}
         </div>
