@@ -142,6 +142,7 @@ const YOUTUBE_FIELDS = [
   { key: 'style', label: 'Style' },
   { key: 'status', label: 'Status' },
   { key: 'priority', label: 'Priority' },
+  { key: 'relacion', label: 'Relacion' },
   { key: 'phone', label: 'Phone' },
   { key: 'que_enviar', label: 'Que Enviar' },
   { key: 'donde_enviar', label: 'Donde Enviar' },
