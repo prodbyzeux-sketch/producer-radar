@@ -346,15 +346,22 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       }
       // Normalize instagram to full URL
       if (out.instagram) out.instagram = normalizeIg(out.instagram);
-      // If name is empty, derive from instagram handle
+      // If name is empty, always derive from instagram handle
       if (!out.name && out.instagram) {
         out.name = nameFromIg(out.instagram);
       }
       return out;
-    }).filter(r => r.name);
+    }).filter(r => r.name || r.instagram); // keep rows with at least a name or instagram
 
-    if (!mapped.length) {
-      toast.error('No rows with a Name field found after mapping');
+    // Final pass: ensure every row has a name
+    for (const row of mapped) {
+      if (!row.name && row.instagram) row.name = nameFromIg(row.instagram);
+    }
+
+    const importable = mapped.filter(r => r.name);
+
+    if (!importable.length) {
+      toast.error('No importable rows found — make sure Name or Instagram is mapped');
       setImporting(false);
       return;
     }
