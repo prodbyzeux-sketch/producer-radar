@@ -60,6 +60,14 @@ export default function YouTubeProducers() {
     return matchSearch && matchStatus && matchStyle;
   });
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handlePageChange = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => { setPage(1); }, [search, statusFilter, styleFilter]);
+
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
