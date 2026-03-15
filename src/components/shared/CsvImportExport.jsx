@@ -173,7 +173,7 @@ const DATE_FIELDS = new Set(['last_action', 'next_follow_up']);
 function MappingModal({ headers, dbFields, initialMapping, existingProducers, rawRows, onConfirm, onCancel }) {
   const [mapping, setMapping] = useState(initialMapping);
 
-  // Build preview: apply mapping to raw rows
+  // Build preview: apply mapping to raw rows, normalize instagram, auto-generate name
   const previewRows = rawRows.slice(0, 50).map(rawRow => {
     const out = {};
     for (const [csvCol, dbKey] of Object.entries(mapping)) {
@@ -184,29 +184,25 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
         else if (BOOLEAN_FIELDS.has(dbKey)) out[dbKey] = val.toLowerCase() === 'true' || val === '1';
         else out[dbKey] = val;
       }
-      }
-      return out;
-      });
+    }
+    // Always normalize instagram
+    if (out.instagram) out.instagram = normalizeIg(out.instagram);
+    // Auto-generate name from instagram if missing
+    if (!out.name && out.instagram) out.name = usernameFromIg(out.instagram);
+    return out;
+  });
 
-      // Duplicate detection
-  const byIg = new Map(existingProducers.filter(p => p.instagram).map(p => [p.instagram.toLowerCase().replace('@', ''), true]));
-  const byName = new Map(existingProducers.map(p => [p.name?.toLowerCase(), true]));
+  // Duplicate detection — Instagram is primary key only
+  const existingIgSet = new Map(
+    existingProducers.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), true])
+  );
 
   const isDupe = (row) => {
-    const ig = row.instagram?.replace('@', '').toLowerCase();
-    if (ig && byIg.has(ig)) return true;
-    if (row.name && byName.has(row.name.toLowerCase())) return true;
-    return false;
+    if (!row.instagram) return false;
+    return existingIgSet.has(normalizeIg(row.instagram));
   };
 
-  // Apply auto name-from-instagram for preview rows too
-  const previewRowsWithNames = previewRows.map(r => {
-    if (!r.name && r.instagram) {
-      const m = r.instagram.match(/instagram\.com\/([^/?#]+)/);
-      return { ...r, name: m ? m[1] : r.instagram };
-    }
-    return r;
-  });
+  const previewRowsWithNames = previewRows; // names already generated above
 
   const dupeCount = previewRowsWithNames.filter(isDupe).length;
   const newCount = previewRowsWithNames.filter(r => r.name && !isDupe(r)).length;
