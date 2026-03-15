@@ -454,17 +454,37 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       return;
     }
 
-    toast.loading(`Importing ${importable.length} producers…`, { id: 'csv-import-progress' });
+    toast.loading(`Loading existing records…`, { id: 'csv-import-progress' });
 
-    // Load existing records — index by normalized instagram username (primary unique key)
-    const existing = await entity.list('-created_date', 5000);
+    // Load ALL existing records with pagination (API limit is ~200 per call)
+    const allExisting = [];
+    let page = 0;
+    const PAGE_SIZE = 200;
+    while (true) {
+      const batch = await entity.list('-created_date', PAGE_SIZE, page * PAGE_SIZE);
+      allExisting.push(...batch);
+      if (batch.length < PAGE_SIZE) break;
+      page++;
+    }
     const igToRecord = new Map(
-      existing.filter(p => p.instagram).map(p => [igKey(p.instagram), p])
+      allExisting.filter(p => p.instagram).map(p => [igKey(p.instagram), p])
     );
 
-    let created = 0, updated = 0;
-    const CHUNK = 20;
-    const DELAY = 800; // ms between chunks to avoid rate limit
+    let created = 0, updated = 0, failed = 0;
+    const CHUNK = 8;   // smaller chunks = fewer 429s
+    const DELAY = 1200; // longer delay between chunks
+
+    // Retry helper
+    const withRetry = async (fn, retries = 3) => {
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try { return await fn(); } catch (e) {
+          if (attempt < retries - 1) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+          else throw e;
+        }
+      }
+    };
+
+    toast.loading(`Importing 0 / ${importable.length}…`, { id: 'csv-import-progress' });
 
     for (let i = 0; i < importable.length; i += CHUNK) {
       const chunk = importable.slice(i, i + CHUNK);
@@ -472,39 +492,41 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
         const key = row.instagram ? igKey(row.instagram) : '';
         const match = key ? igToRecord.get(key) : null;
 
-        if (match) {
-          if (row.status === 'connection') {
-            await entity.delete(match.id);
-            const newRecord = { source: defaultSource, ...row };
-            await entity.create(newRecord);
-            created++;
-          } else {
-            const updates = {};
-            for (const [k, v] of Object.entries(row)) {
-              if (v !== '' && v !== null && v !== undefined) updates[k] = v;
+        try {
+          if (match) {
+            if (row.status === 'connection') {
+              await withRetry(() => entity.delete(match.id));
+              const newRecord = { source: defaultSource, ...row };
+              await withRetry(() => entity.create(newRecord));
+              created++;
+            } else {
+              const updates = {};
+              for (const [k, v] of Object.entries(row)) {
+                if (v !== '' && v !== null && v !== undefined) updates[k] = v;
+              }
+              await withRetry(() => entity.update(match.id, updates));
+              updated++;
             }
-            await entity.update(match.id, updates);
-            updated++;
+          } else {
+            const newRecord = { source: defaultSource, status: 'por contactar', ...row };
+            await withRetry(() => entity.create(newRecord));
+            created++;
           }
-        } else {
-          const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-          await entity.create(newRecord);
-          created++;
+        } catch {
+          failed++;
         }
       }));
 
-      // Progress toast
       const done = Math.min(i + CHUNK, importable.length);
       toast.loading(`Importing… ${done} / ${importable.length}`, { id: 'csv-import-progress' });
 
-      // Small delay between chunks to respect rate limits
       if (i + CHUNK < importable.length) {
         await new Promise(r => setTimeout(r, DELAY));
       }
     }
 
     toast.dismiss('csv-import-progress');
-    toast.success(`Import done — ${created} created, ${updated} updated`);
+    toast.success(`Import done — ${created} created, ${updated} updated${failed > 0 ? `, ${failed} failed` : ''}`);
     setImporting(false);
     onImportComplete?.();
   };
