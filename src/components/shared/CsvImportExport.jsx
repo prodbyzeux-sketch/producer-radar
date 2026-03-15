@@ -231,22 +231,26 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
               </div>
             </div>
             <div className="bg-[#0f0f10] border border-[#27272a] rounded-lg overflow-hidden max-h-48 overflow-y-auto">
-              {previewRows.filter(r => r.name).slice(0, 20).map((row, i) => {
+              {previewRowsWithNames.filter(r => r.name).slice(0, 20).map((row, i) => {
                 const dupe = isDupe(row);
+                const autoName = !previewRows[i]?.name && row.name;
                 return (
                   <div key={i} className={`flex items-center gap-3 px-4 py-2 border-b border-[#1e1e22] last:border-b-0 ${dupe ? 'opacity-50' : ''}`}>
                     {dupe
                       ? <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                       : <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
-                    <span className="text-sm text-white font-medium">{row.name}</span>
-                    {row.instagram && <span className="text-xs text-[#71717a]">{row.instagram}</span>}
+                    <span className="text-sm text-white font-medium">
+                      {row.name}
+                      {autoName && <span className="text-[10px] text-blue-400 ml-1">(auto)</span>}
+                    </span>
+                    {row.instagram && <span className="text-xs text-[#71717a] truncate max-w-[200px]">{row.instagram}</span>}
                     {row.status && <span className="text-xs text-[#52525b]">{row.status}</span>}
                     {dupe && <span className="text-[10px] text-amber-500 ml-auto">duplicate</span>}
                   </div>
                 );
               })}
-              {previewRows.filter(r => r.name).length === 0 && (
-                <p className="text-center text-[#52525b] text-sm py-4">No rows with a Name mapped yet</p>
+              {previewRowsWithNames.filter(r => r.name).length === 0 && (
+                <p className="text-center text-[#52525b] text-sm py-4">Map the Name or Instagram column to preview rows</p>
               )}
             </div>
           </div>
