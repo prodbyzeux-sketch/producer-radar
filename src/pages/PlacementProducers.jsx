@@ -28,7 +28,7 @@ export default function PlacementProducers() {
 
   const { data: producers = [] } = useQuery({
     queryKey: ['placement-producers'],
-    queryFn: () => base44.entities.PlacementProducer.list('-created_date', 200),
+    queryFn: () => base44.entities.PlacementProducer.list('-created_date', 5000),
   });
 
   const updateMutation = useMutation({
