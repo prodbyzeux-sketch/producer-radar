@@ -14,7 +14,7 @@ import CsvImportExport from '@/components/shared/CsvImportExport';
 import { toast } from 'sonner';
 
 const statuses = ['all', 'por contactar', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5', 'archivado', 'eliminado'];
-const styles = ['all', 'Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Other'];
+const styles = ['all', 'Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Emotional Guitars', 'Other'];
 
 export default function YouTubeProducers() {
   const [search, setSearch] = useState('');

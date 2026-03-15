@@ -10,6 +10,7 @@ const styleColors = {
   'NBA YoungBoy': 'bg-red-500/10 text-red-400 border-red-500/20',
   'Melodic Trap': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   'Emo Trap': 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  'Emotional Guitars': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   'Other': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
 };
 
