@@ -334,9 +334,9 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
               </div>
             </div>
             <div className="bg-[#0f0f10] border border-[#27272a] rounded-lg overflow-hidden max-h-48 overflow-y-auto">
-              {previewRowsWithNames.filter(r => r.name).slice(0, 20).map((row, i) => {
+              {previewRowsWithNames.map((row, i) => {
                 const dupe = isDupe(row);
-                const autoName = !previewRows[i]?.name && row.name;
+                const autoName = false;
                 return (
                   <div key={i} className={`flex items-center gap-3 px-4 py-2 border-b border-[#1e1e22] last:border-b-0 ${dupe ? 'opacity-50' : ''}`}>
                     {dupe
