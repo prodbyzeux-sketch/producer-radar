@@ -5,7 +5,7 @@ import { Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const statuses = ['por contactar', 'contactado', 'follow up 1', 'follow up 2', 'follow up 3', 'follow up 4', 'follow up 5', 'archivado', 'eliminado'];
-const styles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Other'];
+const styles = ['Juice WRLD', 'Polo G', 'Rod Wave', 'NBA YoungBoy', 'Melodic Trap', 'Emo Trap', 'Emotional Guitars', 'Other'];
 
 export default function BulkActionBar({ selectedCount, onClearSelection, onBulkUpdate, onBulkDelete }) {
   const [bulkStatus, setBulkStatus] = useState('');
