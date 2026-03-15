@@ -246,7 +246,8 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
       const val = rawRow[csvCol]?.trim();
       if (val) {
         if (NUMBER_FIELDS.has(dbKey)) out[dbKey] = parseInt(val) || 0;
-        else if (BOOLEAN_FIELDS.has(dbKey)) out[dbKey] = val.toLowerCase() === 'true' || val === '1';
+        else if (BOOLEAN_FIELDS.has(dbKey)) out[dbKey] = parseBoolean(val);
+        else if (DATE_FIELDS.has(dbKey)) { const d = parseDate(val); if (d) out[dbKey] = d; }
         else out[dbKey] = val;
       }
     }
