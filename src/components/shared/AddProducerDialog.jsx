@@ -61,15 +61,9 @@ export default function AddProducerDialog({ type, onClose, onAdded }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-[#71717a] mb-1.5 block">Style</label>
-              <Select value={data.style} onValueChange={v => setData({...data, style: v})}>
-                <SelectTrigger className="bg-[#0f0f10] border-[#27272a] text-white text-sm">
-                  <SelectValue placeholder="Style" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1e1e22] border-[#27272a]">
-                  {styles.map(s => <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <label className="text-xs text-[#71717a] mb-1.5 block">Style / Artist</label>
+              <Input value={data.style} onChange={e => setData({...data, style: e.target.value})}
+                className="bg-[#0f0f10] border-[#27272a] text-white text-sm" placeholder="e.g. Juice WRLD, Rod Wave..." />
             </div>
             <div>
               <label className="text-xs text-[#71717a] mb-1.5 block">Priority (1–{maxPriority})</label>
