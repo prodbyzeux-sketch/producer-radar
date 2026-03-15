@@ -30,7 +30,7 @@ export default function YouTubeProducers() {
 
   const { data: producers = [], isLoading } = useQuery({
     queryKey: ['youtube-producers'],
-    queryFn: () => base44.entities.YouTubeProducer.list('-created_date', 200),
+    queryFn: () => base44.entities.YouTubeProducer.list('-created_date', 5000),
   });
 
   const updateMutation = useMutation({

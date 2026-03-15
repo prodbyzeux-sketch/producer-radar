@@ -18,11 +18,11 @@ export default function Connections() {
 
   const { data: ytProducers = [] } = useQuery({
     queryKey: ['youtube-producers'],
-    queryFn: () => base44.entities.YouTubeProducer.list('-last_action', 200),
+    queryFn: () => base44.entities.YouTubeProducer.list('-last_action', 5000),
   });
   const { data: plProducers = [] } = useQuery({
     queryKey: ['placement-producers'],
-    queryFn: () => base44.entities.PlacementProducer.list('-last_action', 200),
+    queryFn: () => base44.entities.PlacementProducer.list('-last_action', 5000),
   });
 
   const updateYT = useMutation({
