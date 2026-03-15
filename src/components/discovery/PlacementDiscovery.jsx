@@ -361,11 +361,17 @@ export default function PlacementDiscovery() {
       const results = await Promise.all(batch.map(async (p) => {
         const info = await enrichProducer(p.name, p.song, p.artist, p.aka, p.top_collaborators);
 
-        // Merge extracted Instagram with enriched — always return full URL
-        let ig = normalizeInstagram(info.instagram_handle || p.instagram || '');
+        // Instagram priority: Genius enrichment > Stage 1 extraction
+        const enrichedIg = normalizeInstagram(info.instagram_handle || '');
+        const stage1Ig = normalizeInstagram(p.instagram || '');
+        const ig = enrichedIg || stage1Ig;
 
-        let placements = info.highlights_placements?.trim() || '';
-        placements = placements.split(',').map(s => s.split(/\s*[-–]\s*/)[0].trim()).filter(Boolean).join(', ');
+        // Merge placements: combine Stage 1 known artists + enrichment results
+        const enrichedPlacements = (info.highlights_placements || '')
+          .split(',').map(s => s.split(/\s*[-–]\s*/)[0].trim()).filter(Boolean);
+        const stage1Placements = (p.highlights_placements || '')
+          .split(',').map(s => s.trim()).filter(Boolean);
+        const mergedPlacements = [...new Set([...stage1Placements, ...enrichedPlacements])].join(', ');
 
         // Merge collaborators
         const enrichedCollabs = info.top_collaborators
@@ -377,11 +383,9 @@ export default function PlacementDiscovery() {
         const mergedCollabs = [...new Set([...existingCollabs, ...enrichedCollabs])].slice(0, 5).join(', ');
 
         const followersRaw = info.instagram_followers;
-        // -1 = unknown, 0 = not found, >0 = actual count
         const followersUnknown = followersRaw === -1 || followersRaw === null || followersRaw === undefined;
         const followers = followersUnknown ? 0 : Math.round(followersRaw || 0);
 
-        // Filter out large producers (>30k followers)
         if (!followersUnknown && followers > 30000) return null;
 
         return {
@@ -390,7 +394,7 @@ export default function PlacementDiscovery() {
           followers_ig: followers,
           followers_unknown: followersUnknown,
           email: info.email?.trim() || '',
-          highlights_placements: placements || 'unknown',
+          highlights_placements: mergedPlacements || '',
           top_collaborators: mergedCollabs,
           aka: info.aka || p.aka || '',
         };
