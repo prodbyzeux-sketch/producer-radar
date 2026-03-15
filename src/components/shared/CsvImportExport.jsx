@@ -51,6 +51,42 @@ function parseCsv(text) {
   return { headers, rows };
 }
 
+// ─── Instagram normalization ──────────────────────────────────────────────────
+/**
+ * Extracts the username from any Instagram input format and returns
+ * the canonical URL: https://instagram.com/USERNAME
+ *
+ * Handles:
+ *   @username  →  https://instagram.com/username
+ *   username   →  https://instagram.com/username
+ *   instagram.com/username  →  https://instagram.com/username
+ *   https://instagram.com/username/  →  https://instagram.com/username
+ *   https://www.instagram.com/username  →  https://instagram.com/username
+ */
+function normalizeIg(val) {
+  if (!val) return '';
+  // Step 1-4: strip protocol, www, domain
+  let s = val.trim();
+  s = s.replace(/^https?:\/\//i, '');   // remove https:// or http://
+  s = s.replace(/^www\./i, '');          // remove www.
+  s = s.replace(/^instagram\.com\//i, ''); // remove instagram.com/
+  // Step 5: strip leading/trailing slashes and query strings
+  s = s.replace(/\?.*$/, '').replace(/#+.*$/, '').replace(/\/+$/, '').replace(/^\/+/, '');
+  // Step 6: strip leading @
+  s = s.replace(/^@/, '');
+  s = s.trim();
+  if (!s || s.includes(' ')) return '';
+  return `https://instagram.com/${s}`;
+}
+
+/** Extract username from a normalized (or any) instagram value */
+function usernameFromIg(val) {
+  const normalized = normalizeIg(val);
+  if (!normalized) return '';
+  const m = normalized.match(/instagram\.com\/([^/?#\s]+)/);
+  return m ? m[1] : '';
+}
+
 // ─── DB fields ────────────────────────────────────────────────────────────────
 const YOUTUBE_FIELDS = [
   { key: 'name', label: 'Name' },
