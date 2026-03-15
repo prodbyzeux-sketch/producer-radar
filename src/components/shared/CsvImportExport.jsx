@@ -410,8 +410,8 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           updated++;
         } else {
           const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-          await entity.create(newRecord);
-          if (igKey) igToRecord.set(igKey, newRecord);
+          const created_ = await entity.create(newRecord);
+          if (igKey) igToRecord.set(igKey, created_);
           created++;
         }
       }
