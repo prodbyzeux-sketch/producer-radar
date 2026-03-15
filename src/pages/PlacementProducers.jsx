@@ -21,6 +21,8 @@ export default function PlacementProducers() {
   const [selected, setSelected] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   const queryClient = useQueryClient();
 
