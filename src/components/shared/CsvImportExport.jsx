@@ -352,7 +352,7 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
                   </div>
                 );
               })}
-              {previewRowsWithNames.filter(r => r.name).length === 0 && (
+              {previewRowsWithNames.length === 0 && (
                 <p className="text-center text-[#52525b] text-sm py-4">Map the Name or Instagram column to preview rows</p>
               )}
             </div>
