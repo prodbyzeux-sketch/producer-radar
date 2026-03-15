@@ -62,7 +62,7 @@ export default function PlacementProducers() {
 
   const handlePageChange = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-  React.useEffect(() => { setPage(1); }, [search, statusFilter]);
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => {

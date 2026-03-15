@@ -66,7 +66,7 @@ export default function YouTubeProducers() {
   const handlePageChange = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   // Reset to page 1 when filters change
-  React.useEffect(() => { setPage(1); }, [search, statusFilter, styleFilter]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, styleFilter]);
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
