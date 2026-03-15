@@ -326,7 +326,7 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-[#71717a] uppercase tracking-wider">
-                Preview (first {Math.min(rawRows.length, 50)} rows)
+                Preview (first 20 rows)
               </p>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-green-400">{newCount} new</span>
