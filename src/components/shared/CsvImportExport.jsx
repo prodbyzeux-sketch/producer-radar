@@ -204,7 +204,12 @@ const AUTO_ALIASES = {
 };
 
 function autoDetect(header) {
-  const key = header.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
+  const key = header.toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents: relación → relacion
+    .replace(/\s+/g, '_')
+    .replace(/[^\w]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
   return AUTO_ALIASES[key] || null;
 }
 
