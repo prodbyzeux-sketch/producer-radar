@@ -430,13 +430,14 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
         const val = rawRow[csvCol]?.trim();
         if (val) {
           if (NUMBER_FIELDS.has(dbKey)) out[dbKey] = parseInt(val) || 0;
-          else if (BOOLEAN_FIELDS.has(dbKey)) out[dbKey] = val.toLowerCase() === 'true' || val === '1';
+          else if (BOOLEAN_FIELDS.has(dbKey)) out[dbKey] = parseBoolean(val);
+          else if (DATE_FIELDS.has(dbKey)) { const d = parseDate(val); if (d) out[dbKey] = d; }
           else out[dbKey] = val;
         }
       }
-      // Step 2: Normalize instagram
+      // Normalize instagram
       if (out.instagram) out.instagram = normalizeIg(out.instagram);
-      // Step 3: Generate name from instagram if missing
+      // Generate name from instagram if missing
       if (!out.name && out.instagram) out.name = usernameFromIg(out.instagram);
       return out;
     }).filter(r => r.name); // must have a name to be importable
@@ -447,6 +448,8 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       return;
     }
 
+    toast.loading(`Importing ${importable.length} producers…`, { id: 'csv-import-progress' });
+
     // Load existing records — index by normalized instagram username (primary unique key)
     const existing = await entity.list('-created_date', 5000);
     const igToRecord = new Map(
@@ -454,20 +457,20 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     );
 
     let created = 0, updated = 0;
-    const CHUNK = 100;
-    const total = importable.length;
 
-    for (let i = 0; i < total; i += CHUNK) {
-      const chunk = importable.slice(i, i + CHUNK);
+    // Process all rows in parallel — no chunking
+    await Promise.all(importable.map(async (row) => {
+      const key = row.instagram ? igKey(row.instagram) : '';
+      const match = key ? igToRecord.get(key) : null;
 
-      toast.loading(`Importing producers… ${Math.min(i + CHUNK, total)} / ${total}`, { id: 'csv-import-progress' });
-
-      for (const row of chunk) {
-        // Rule 6: Use Instagram as unique ID — username key for lookup
-        const key = row.instagram ? igKey(row.instagram) : '';
-        const match = key ? igToRecord.get(key) : null;
-
-        if (match) {
+      if (match) {
+        // If incoming row has status "connection", delete existing and create new
+        if (row.status === 'connection') {
+          await entity.delete(match.id);
+          const newRecord = { source: defaultSource, ...row };
+          await entity.create(newRecord);
+          created++;
+        } else {
           // Update existing — only overwrite with non-empty values
           const updates = {};
           for (const [k, v] of Object.entries(row)) {
@@ -475,18 +478,13 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           }
           await entity.update(match.id, updates);
           updated++;
-        } else {
-          // Rule 1: Every row creates exactly one record
-          const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-          const saved = await entity.create(newRecord);
-          if (key) igToRecord.set(key, saved || newRecord);
-          created++;
         }
+      } else {
+        const newRecord = { source: defaultSource, status: 'por contactar', ...row };
+        await entity.create(newRecord);
+        created++;
       }
-
-      // Yield to browser — prevents UI freeze on large imports
-      await new Promise(r => setTimeout(r, 0));
-    }
+    }));
 
     toast.dismiss('csv-import-progress');
     toast.success(`Import done — ${created} created, ${updated} updated`);
