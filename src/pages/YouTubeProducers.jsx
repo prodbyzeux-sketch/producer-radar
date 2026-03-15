@@ -165,7 +165,7 @@ export default function YouTubeProducers() {
       />
 
       <ProducerTable
-        producers={filtered}
+        producers={paginated}
         columns={['name', 'instagram', 'youtube', 'style', 'status', 'priority']}
         producerType="youtube"
         onRowClick={handleRowClick}
@@ -179,6 +179,8 @@ export default function YouTubeProducers() {
           updateMutation.mutate({ id: p.id, data: { last_action: today, next_follow_up: next.toISOString().split('T')[0] } });
         }}
       />
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
 
       {selected && (
         <ProducerProfile

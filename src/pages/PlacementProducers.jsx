@@ -152,7 +152,7 @@ export default function PlacementProducers() {
       />
 
       <ProducerTable
-        producers={filtered}
+        producers={paginated}
         columns={['name', 'style', 'placements', 'instagram', 'priority', 'status']}
         producerType="placement"
         onRowClick={handleRowClick}
@@ -166,6 +166,8 @@ export default function PlacementProducers() {
           updateMutation.mutate({ id: p.id, data: { last_action: today, next_follow_up: next.toISOString().split('T')[0] } });
         }}
       />
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
 
       {selected && (
         <ProducerProfile
