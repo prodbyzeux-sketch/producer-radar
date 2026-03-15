@@ -208,7 +208,7 @@ function autoDetect(header) {
   return AUTO_ALIASES[key] || null;
 }
 
-const NUMBER_FIELDS = new Set(['followers_ig', 'priority', 'youtube_subscribers']);
+const NUMBER_FIELDS = new Set(['followers_ig', 'priority', 'youtube_subscribers', 'relacion']);
 const BOOLEAN_FIELDS = new Set(['favorite']);
 const DATE_FIELDS = new Set(['last_action', 'next_follow_up']);
 
