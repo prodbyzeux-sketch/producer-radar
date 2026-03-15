@@ -456,16 +456,8 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
     toast.loading(`Loading existing records…`, { id: 'csv-import-progress' });
 
-    // Load ALL existing records with pagination (API limit is ~200 per call)
-    const allExisting = [];
-    let page = 0;
-    const PAGE_SIZE = 200;
-    while (true) {
-      const batch = await entity.list('-created_date', PAGE_SIZE, page * PAGE_SIZE);
-      allExisting.push(...batch);
-      if (batch.length < PAGE_SIZE) break;
-      page++;
-    }
+    // Load ALL existing records (SDK supports up to 5000 per call)
+    const allExisting = await entity.list('-created_date', 5000);
     const igToRecord = new Map(
       allExisting.filter(p => p.instagram).map(p => [igKey(p.instagram), p])
     );
