@@ -305,6 +305,8 @@ export default function PlacementDiscovery() {
           if (!p.name?.trim()) continue;
           const key = p.name.toLowerCase().trim();
           const collabs = (p.collaborators || []).filter(Boolean);
+          // Use the song's main artist as a known placement from stage 1
+          const knownArtist = res.artist ? [res.artist] : [];
 
           if (!producerMap.has(key)) {
             producerMap.set(key, {
@@ -314,6 +316,7 @@ export default function PlacementDiscovery() {
               artist: res.artist || '',
               instagram: p.instagram || '',
               top_collaborators: collabs.join(', '),
+              highlights_placements: knownArtist.join(', '),
             });
           } else {
             const ex = producerMap.get(key);
@@ -325,6 +328,13 @@ export default function PlacementDiscovery() {
               const existingCollabs = ex.top_collaborators ? ex.top_collaborators.split(', ') : [];
               const merged = [...new Set([...existingCollabs, ...collabs])].slice(0, 5);
               ex.top_collaborators = merged.join(', ');
+            }
+            // Merge known artists as placements
+            if (res.artist) {
+              const existingPlacements = ex.highlights_placements ? ex.highlights_placements.split(', ').filter(Boolean) : [];
+              if (!existingPlacements.includes(res.artist)) {
+                ex.highlights_placements = [...existingPlacements, res.artist].join(', ');
+              }
             }
             if (!ex.instagram && p.instagram) ex.instagram = p.instagram;
             if (!ex.aka && p.aka) ex.aka = p.aka;
