@@ -20,34 +20,77 @@ function toCsv(rows, fields) {
   return [header, ...body].join('\n');
 }
 
-function parseCsvLine(line) {
-  const cells = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+/**
+ * Safe CSV parser — handles:
+ * - Line breaks inside quoted cells (Rule 3/7): replaced with ' | '
+ * - Unnamed: N columns (Rule 2): auto-ignored
+ * - Tabs and extra whitespace (Rule 8): sanitized
+ * - Each logical row = one record (Rule 1/7)
+ */
+function parseCsv(text) {
+  // Normalize line endings
+  let raw = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Tokenize into fields respecting quoted strings (handles embedded newlines)
+  const tokens = [];
+  let cur = '', inQ = false, i = 0;
+  while (i < raw.length) {
+    const ch = raw[i];
     if (ch === '"') {
-      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
+      if (inQ && raw[i + 1] === '"') { cur += '"'; i += 2; continue; } // escaped quote
+      inQ = !inQ;
+      i++;
       continue;
     }
-    if (ch === ',' && !inQ) { cells.push(cur); cur = ''; continue; }
-    cur += ch;
+    if (inQ) {
+      // Inside a quoted cell — replace newlines with ' | ' (Rule 3)
+      if (ch === '\n') { cur += ' | '; i++; continue; }
+      if (ch === '\t') { cur += ' '; i++; continue; } // Rule 8: tabs
+      cur += ch; i++; continue;
+    }
+    // Outside quotes
+    if (ch === '\t') { cur += ' '; i++; continue; } // Rule 8: tabs
+    if (ch === ',') { tokens.push({ val: cur.trim(), eol: false }); cur = ''; i++; continue; }
+    if (ch === '\n') { tokens.push({ val: cur.trim(), eol: true }); cur = ''; i++; continue; }
+    cur += ch; i++;
   }
-  cells.push(cur);
-  return cells;
-}
+  if (cur.trim() || tokens.length) tokens.push({ val: cur.trim(), eol: true });
 
-function parseCsv(text) {
-  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
-  const lines = normalized.split('\n');
-  if (lines.length < 2) return { headers: [], rows: [] };
-  const headers = parseCsvLine(lines[0]).map(h => h.trim());
-  const rows = lines.slice(1).filter(l => l.trim()).map(line => {
-    const cells = parseCsvLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (cells[i] || '').trim(); });
-    return obj;
-  });
+  if (!tokens.length) return { headers: [], rows: [] };
+
+  // Split tokens into rows
+  const allRows = [];
+  let currentRow = [];
+  for (const t of tokens) {
+    currentRow.push(t.val);
+    if (t.eol) { allRows.push(currentRow); currentRow = []; }
+  }
+  if (currentRow.length) allRows.push(currentRow);
+
+  if (allRows.length < 2) return { headers: [], rows: [] };
+
+  // Headers — filter out "Unnamed: N" columns (Rule 2)
+  const rawHeaders = allRows[0].map(h => h.trim());
+  const validHeaderIndices = rawHeaders
+    .map((h, idx) => ({ h, idx }))
+    .filter(({ h }) => h && !/^unnamed[:\s]/i.test(h))
+    .map(({ h, idx }) => ({ h, idx }));
+
+  const headers = validHeaderIndices.map(x => x.h);
+
+  const rows = allRows.slice(1)
+    .filter(r => r.some(c => c)) // skip fully empty rows
+    .map(cells => {
+      const obj = {};
+      validHeaderIndices.forEach(({ h, idx }) => {
+        // Rule 8: clean invalid characters from cell values
+        let val = (cells[idx] || '').trim();
+        val = val.replace(/\t/g, ' ').replace(/\s{2,}/g, ' ');
+        obj[h] = val;
+      });
+      return obj;
+    });
+
   return { headers, rows };
 }
 
