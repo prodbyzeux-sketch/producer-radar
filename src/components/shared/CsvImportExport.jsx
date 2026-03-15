@@ -493,7 +493,8 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
             } else {
               const updates = {};
               for (const [k, v] of Object.entries(row)) {
-                if (v !== '' && v !== null && v !== undefined) updates[k] = v;
+                // Include all non-null, non-undefined values (including empty strings for string fields)
+                if (v !== null && v !== undefined) updates[k] = v;
               }
               await withRetry(() => entity.update(match.id, updates));
               updated++;
