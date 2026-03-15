@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Search, Plus } from 'lucide-react';
 import ProducerTable from '@/components/shared/ProducerTable';
+import Pagination from '@/components/shared/Pagination';
 import ProducerProfile from '@/components/shared/ProducerProfile';
 import AddProducerDialog from '@/components/shared/AddProducerDialog';
 import BulkActionBar from '@/components/shared/BulkActionBar';
