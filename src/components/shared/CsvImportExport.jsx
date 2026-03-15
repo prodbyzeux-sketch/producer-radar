@@ -233,14 +233,14 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
     return out;
   });
 
-  // Duplicate detection — Instagram is primary key only
+  // Duplicate detection — Instagram username is primary key (Rule 6)
   const existingIgSet = new Map(
-    existingProducers.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), true])
+    existingProducers.filter(p => p.instagram).map(p => [igKey(p.instagram), true])
   );
 
   const isDupe = (row) => {
     if (!row.instagram) return false;
-    return existingIgSet.has(normalizeIg(row.instagram));
+    return existingIgSet.has(igKey(row.instagram));
   };
 
   const previewRowsWithNames = previewRows; // names already generated above
