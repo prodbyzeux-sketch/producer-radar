@@ -465,34 +465,45 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     );
 
     let created = 0, updated = 0;
+    const CHUNK = 20;
+    const DELAY = 800; // ms between chunks to avoid rate limit
 
-    // Process all rows in parallel — no chunking
-    await Promise.all(importable.map(async (row) => {
-      const key = row.instagram ? igKey(row.instagram) : '';
-      const match = key ? igToRecord.get(key) : null;
+    for (let i = 0; i < importable.length; i += CHUNK) {
+      const chunk = importable.slice(i, i + CHUNK);
+      await Promise.all(chunk.map(async (row) => {
+        const key = row.instagram ? igKey(row.instagram) : '';
+        const match = key ? igToRecord.get(key) : null;
 
-      if (match) {
-        // If incoming row has status "connection", delete existing and create new
-        if (row.status === 'connection') {
-          await entity.delete(match.id);
-          const newRecord = { source: defaultSource, ...row };
+        if (match) {
+          if (row.status === 'connection') {
+            await entity.delete(match.id);
+            const newRecord = { source: defaultSource, ...row };
+            await entity.create(newRecord);
+            created++;
+          } else {
+            const updates = {};
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== '' && v !== null && v !== undefined) updates[k] = v;
+            }
+            await entity.update(match.id, updates);
+            updated++;
+          }
+        } else {
+          const newRecord = { source: defaultSource, status: 'por contactar', ...row };
           await entity.create(newRecord);
           created++;
-        } else {
-          // Update existing — only overwrite with non-empty values
-          const updates = {};
-          for (const [k, v] of Object.entries(row)) {
-            if (v !== '' && v !== null && v !== undefined) updates[k] = v;
-          }
-          await entity.update(match.id, updates);
-          updated++;
         }
-      } else {
-        const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-        await entity.create(newRecord);
-        created++;
+      }));
+
+      // Progress toast
+      const done = Math.min(i + CHUNK, importable.length);
+      toast.loading(`Importing… ${done} / ${importable.length}`, { id: 'csv-import-progress' });
+
+      // Small delay between chunks to respect rate limits
+      if (i + CHUNK < importable.length) {
+        await new Promise(r => setTimeout(r, DELAY));
       }
-    }));
+    }
 
     toast.dismiss('csv-import-progress');
     toast.success(`Import done — ${created} created, ${updated} updated`);
