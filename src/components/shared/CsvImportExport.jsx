@@ -245,8 +245,8 @@ function parseBoolean(val) {
 function MappingModal({ headers, dbFields, initialMapping, existingProducers, rawRows, onConfirm, onCancel }) {
   const [mapping, setMapping] = useState(initialMapping);
 
-  // Build preview: apply mapping to raw rows, normalize instagram, auto-generate name
-  const previewRows = rawRows.slice(0, 50).map(rawRow => {
+  // Helper to map a single raw row
+  const mapRow = (rawRow) => {
     const out = {};
     for (const [csvCol, dbKey] of Object.entries(mapping)) {
       if (dbKey === '__ignore__') continue;
@@ -258,27 +258,25 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
         else out[dbKey] = val;
       }
     }
-    // Always normalize instagram
     if (out.instagram) out.instagram = normalizeIg(out.instagram);
-    // Auto-generate name from instagram if missing
     if (!out.name && out.instagram) out.name = usernameFromIg(out.instagram);
     return out;
-  });
+  };
 
-  // Duplicate detection — Instagram username is primary key (Rule 6)
+  // Duplicate detection — Instagram username is primary key
   const existingIgSet = new Map(
     existingProducers.filter(p => p.instagram).map(p => [igKey(p.instagram), true])
   );
 
-  const isDupe = (row) => {
-    if (!row.instagram) return false;
-    return existingIgSet.has(igKey(row.instagram));
-  };
+  const isDupe = (row) => row.instagram ? existingIgSet.has(igKey(row.instagram)) : false;
 
-  const previewRowsWithNames = previewRows; // names already generated above
+  // Stats over ALL rows (not just preview slice)
+  const allMapped = rawRows.map(mapRow).filter(r => r.name);
+  const dupeCount = allMapped.filter(isDupe).length;
+  const newCount = allMapped.filter(r => !isDupe(r)).length;
 
-  const dupeCount = previewRowsWithNames.filter(isDupe).length;
-  const newCount = previewRowsWithNames.filter(r => r.name && !isDupe(r)).length;
+  // Only first 20 shown in preview UI
+  const previewRowsWithNames = allMapped.slice(0, 20);
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={onCancel}>
