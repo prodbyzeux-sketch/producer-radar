@@ -368,7 +368,7 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
     // Load existing for dupe detection
     const existing = await entity.list('-created_date', 5000);
-    // Index by instagram URL (normalized), name
+    // Index by normalized instagram URL (primary) and name (secondary)
     const igToRecord = new Map(
       existing.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), p])
     );
@@ -376,14 +376,20 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
     let created = 0, updated = 0;
     const CHUNK = 100;
+    const total = importable.length;
 
-    for (let i = 0; i < mapped.length; i += CHUNK) {
-      const chunk = mapped.slice(i, i + CHUNK);
+    for (let i = 0; i < total; i += CHUNK) {
+      const chunk = importable.slice(i, i + CHUNK);
+
+      // Show progress before processing this chunk
+      toast.loading(`Importing producers… ${Math.min(i + CHUNK, total)} / ${total}`, { id: 'csv-import-progress' });
 
       for (const row of chunk) {
+        // Instagram is primary key — always normalize before lookup
         const igKey = row.instagram ? normalizeIg(row.instagram) : '';
         const matchByIg = igKey ? igToRecord.get(igKey) : null;
-        const matchByName = nameToRecord.get(row.name?.toLowerCase());
+        // Only fall back to name if no instagram present
+        const matchByName = !igKey ? nameToRecord.get(row.name?.toLowerCase()) : null;
         const match = matchByIg || matchByName;
 
         if (match) {
@@ -396,16 +402,14 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
         } else {
           const newRecord = { source: defaultSource, status: 'por contactar', ...row };
           await entity.create(newRecord);
-          nameToRecord.set(row.name.toLowerCase(), newRecord);
+          if (row.name) nameToRecord.set(row.name.toLowerCase(), newRecord);
           if (igKey) igToRecord.set(igKey, newRecord);
           created++;
         }
       }
 
-      // Progress toast every chunk
-      if (mapped.length > CHUNK) {
-        toast.loading(`Importing... ${Math.min(i + CHUNK, mapped.length)} / ${mapped.length}`, { id: 'csv-import-progress' });
-      }
+      // Yield to browser to prevent UI freeze on large imports
+      await new Promise(r => setTimeout(r, 0));
     }
 
     toast.dismiss('csv-import-progress');
