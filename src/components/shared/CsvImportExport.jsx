@@ -423,10 +423,9 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
   // ── Confirmed mapping → import ────────────────────────────────────────────
   const handleConfirmImport = async (mapping) => {
+    const { rows } = mappingState;
     setMappingState(null);
     setImporting(true);
-
-    const { rows } = mappingState;
 
     // Apply mapping to rows — normalize instagram and auto-generate name
     const importable = rows.map(rawRow => {
