@@ -123,30 +123,32 @@ async function enrichProducer(name, song, artist, aka, existingCollabs) {
         add_context_from_internet: true,
         prompt: `Find detailed information for music producer "${name}"${aka ? ` (also known as "${aka}")` : ''} who produced "${song || 'unknown song'}" by ${artist || 'unknown artist'}.
 
-Search these sources in STRICT priority order and stop at the first reliable result:
-1. Genius artist page for "${name}" — check External Links section for Instagram URL
-2. Genius song credits page — check bio or credits for Instagram links
-3. Producer bio on Genius — look for any Instagram mention
-4. Official website of "${name}" — look for Instagram link
-5. Search "${name} producer instagram" on Google
+STEP 1 — Find Instagram (CRITICAL, follow this order strictly):
+1. Go to genius.com and search for "${name}" producer page
+2. On the Genius artist page for "${name}", look at the "External Links" or "Social Media" section — this ALWAYS contains the Instagram URL
+3. Look for any @handle or instagram.com link in the Genius bio or credits
+4. If not on Genius, search Google for: site:instagram.com "${name}" producer
+5. Search Google: "${name}" producer instagram
 
-CRITICAL Instagram rules:
-- Return the FULL Instagram URL: https://instagram.com/handle (NOT @handle)
-- If you only find a handle like @prodname, convert it to https://instagram.com/prodname
-- The Genius External Links section is the most reliable source
+Instagram return rules:
+- ALWAYS return the full URL format: https://instagram.com/HANDLE
+- If you find @handle, convert to https://instagram.com/handle
+- The Genius "External Links" section is the MOST RELIABLE source — prioritize it above all
+- Do NOT return a URL unless you are confident it belongs to THIS producer
 
-Also find:
-- Top 5 collaborators: artists this producer has worked with most
-- Notable placements: comma separated artist names only
-- Instagram follower count (number only)
-- Contact email if publicly available
-- Any AKA / alternate producer names
+STEP 2 — Find notable placements (CRITICAL):
+- Go to the Genius artist page for "${name}" and look at their DISCOGRAPHY or CREDITS sections
+- List ALL artists they have produced for, especially: Drake, Juice WRLD, NBA YoungBoy, Lil Baby, Rod Wave, Polo G, NoCap, Future, Gunna, Lil Durk, Rylo Rodriguez, etc.
+- Also check: song credits pages on Genius where "${name}" appears as producer
+- Return ONLY artist names, comma separated (e.g. "Juice WRLD, Polo G, Rod Wave")
+- This is the most important field — never leave it empty if you find ANY artist on Genius
 
-IMPORTANT: Only include producers with under 30,000 Instagram followers. If follower count is unavailable, set instagram_followers to -1 (unknown).
+STEP 3 — Other info:
+- Top 5 collaborators: artists this producer has worked with most (comma separated)
+- Instagram follower count (number only, -1 if unknown)
+- Contact email if publicly visible
 
-${existingCollabs ? `Already known collaborators: ${existingCollabs}` : ''}
-
-Return the best Instagram FULL URL you find. Leave empty string only if truly not found.`,
+${existingCollabs ? `Already known collaborators: ${existingCollabs}` : ''}`,
         response_json_schema: {
           type: 'object',
           properties: {
