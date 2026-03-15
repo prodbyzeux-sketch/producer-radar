@@ -382,13 +382,11 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       return;
     }
 
-    // Load existing for dupe detection
+    // Load existing records — index by normalized instagram (primary unique key)
     const existing = await entity.list('-created_date', 5000);
-    // Index by normalized instagram URL (primary) and name (secondary)
     const igToRecord = new Map(
       existing.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), p])
     );
-    const nameToRecord = new Map(existing.map(p => [p.name?.toLowerCase(), p]));
 
     let created = 0, updated = 0;
     const CHUNK = 100;
@@ -397,18 +395,15 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     for (let i = 0; i < total; i += CHUNK) {
       const chunk = importable.slice(i, i + CHUNK);
 
-      // Show progress before processing this chunk
       toast.loading(`Importing producers… ${Math.min(i + CHUNK, total)} / ${total}`, { id: 'csv-import-progress' });
 
       for (const row of chunk) {
-        // Instagram is primary key — always normalize before lookup
+        // Step 4: Use Instagram as unique ID only
         const igKey = row.instagram ? normalizeIg(row.instagram) : '';
-        const matchByIg = igKey ? igToRecord.get(igKey) : null;
-        // Only fall back to name if no instagram present
-        const matchByName = !igKey ? nameToRecord.get(row.name?.toLowerCase()) : null;
-        const match = matchByIg || matchByName;
+        const match = igKey ? igToRecord.get(igKey) : null;
 
         if (match) {
+          // Update existing record — only overwrite with non-empty values
           const updates = {};
           for (const [k, v] of Object.entries(row)) {
             if (v !== '' && v !== null && v !== undefined) updates[k] = v;
@@ -416,15 +411,15 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           await entity.update(match.id, updates);
           updated++;
         } else {
+          // Create new record — each Instagram = one unique record (Step 5)
           const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-          await entity.create(newRecord);
-          if (row.name) nameToRecord.set(row.name.toLowerCase(), newRecord);
-          if (igKey) igToRecord.set(igKey, newRecord);
+          const created_ = await entity.create(newRecord);
+          if (igKey) igToRecord.set(igKey, created_ || newRecord);
           created++;
         }
       }
 
-      // Yield to browser to prevent UI freeze on large imports
+      // Yield to browser — prevents UI freeze on large imports
       await new Promise(r => setTimeout(r, 0));
     }
 
