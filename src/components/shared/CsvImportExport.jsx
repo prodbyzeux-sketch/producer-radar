@@ -328,15 +328,14 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
     // Normalize instagram to full URL: https://instagram.com/username
     const normalizeIg = (val) => {
       if (!val) return '';
-      let s = val.trim();
-      s = s.replace(/^https?:\/\//i, '');
-      s = s.replace(/^www\./i, '');
-      s = s.replace(/^instagram\.com\//i, '');
-      s = s.replace(/\/+$/, '');
-      s = s.replace(/^@/, '');
-      s = s.split('/')[0].split('?')[0].split('#')[0].trim();
-      if (!s) return '';
-      return `https://instagram.com/${s}`;
+      val = val.trim().replace(/\/+$/, ''); // strip trailing slashes
+      // Already a full URL
+      const urlMatch = val.match(/instagram\.com\/([^/?#\s]+)/i);
+      if (urlMatch) return `https://instagram.com/${urlMatch[1]}`;
+      // Handle or @handle
+      const handle = val.replace(/^@/, '').trim();
+      if (!handle || handle.includes(' ')) return '';
+      return `https://instagram.com/${handle}`;
     };
 
     // Extract username from normalized instagram URL
@@ -380,11 +379,13 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       return;
     }
 
-    // Load existing for dupe detection — index by normalized instagram only
+    // Load existing for dupe detection
     const existing = await entity.list('-created_date', 5000);
+    // Index by normalized instagram URL (primary) and name (secondary)
     const igToRecord = new Map(
       existing.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), p])
     );
+    const nameToRecord = new Map(existing.map(p => [p.name?.toLowerCase(), p]));
 
     let created = 0, updated = 0;
     const CHUNK = 100;
@@ -397,11 +398,14 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       toast.loading(`Importing producers… ${Math.min(i + CHUNK, total)} / ${total}`, { id: 'csv-import-progress' });
 
       for (const row of chunk) {
-        const igKey = row.instagram || '';
-        const match = igKey ? igToRecord.get(igKey) : null;
+        // Instagram is primary key — always normalize before lookup
+        const igKey = row.instagram ? normalizeIg(row.instagram) : '';
+        const matchByIg = igKey ? igToRecord.get(igKey) : null;
+        // Only fall back to name if no instagram present
+        const matchByName = !igKey ? nameToRecord.get(row.name?.toLowerCase()) : null;
+        const match = matchByIg || matchByName;
 
         if (match) {
-          // Update — only overwrite with non-empty values
           const updates = {};
           for (const [k, v] of Object.entries(row)) {
             if (v !== '' && v !== null && v !== undefined) updates[k] = v;
@@ -410,8 +414,9 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           updated++;
         } else {
           const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-          const created_ = await entity.create(newRecord);
-          if (igKey) igToRecord.set(igKey, created_);
+          await entity.create(newRecord);
+          if (row.name) nameToRecord.set(row.name.toLowerCase(), newRecord);
+          if (igKey) igToRecord.set(igKey, newRecord);
           created++;
         }
       }
