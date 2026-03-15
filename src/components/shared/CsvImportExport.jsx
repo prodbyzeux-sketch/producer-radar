@@ -163,8 +163,17 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
     return false;
   };
 
-  const dupeCount = previewRows.filter(isDupe).length;
-  const newCount = previewRows.filter(r => r.name && !isDupe(r)).length;
+  // Apply auto name-from-instagram for preview rows too
+  const previewRowsWithNames = previewRows.map(r => {
+    if (!r.name && r.instagram) {
+      const m = r.instagram.match(/instagram\.com\/([^/?#]+)/);
+      return { ...r, name: m ? m[1] : r.instagram };
+    }
+    return r;
+  });
+
+  const dupeCount = previewRowsWithNames.filter(isDupe).length;
+  const newCount = previewRowsWithNames.filter(r => r.name && !isDupe(r)).length;
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={onCancel}>
