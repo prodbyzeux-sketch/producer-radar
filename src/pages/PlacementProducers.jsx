@@ -82,9 +82,9 @@ export default function PlacementProducers() {
 
   const batchOp = async (ids, fn) => {
     const arr = [...ids];
-    for (let i = 0; i < arr.length; i += 5) {
-      await Promise.all(arr.slice(i, i + 5).map(id => fn(id)));
-      if (i + 5 < arr.length) await new Promise(r => setTimeout(r, 300));
+    for (let i = 0; i < arr.length; i += 20) {
+      await Promise.all(arr.slice(i, i + 20).map(id => fn(id)));
+      if (i + 20 < arr.length) await new Promise(r => setTimeout(r, 200));
     }
   };
 
