@@ -312,18 +312,20 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
     const { rows } = mappingState;
 
-    // Normalize instagram to full URL
+    // Normalize instagram to full URL: https://instagram.com/username
     const normalizeIg = (val) => {
       if (!val) return '';
-      val = val.trim();
-      if (val.startsWith('https://instagram.com/') || val.startsWith('https://www.instagram.com/')) {
-        return val.replace('https://www.instagram.com/', 'https://instagram.com/');
-      }
-      const handle = val.replace(/^@/, '').replace(/^instagram\.com\//, '');
-      return handle ? `https://instagram.com/${handle}` : '';
+      val = val.trim().replace(/\/+$/, ''); // strip trailing slashes
+      // Already a full URL
+      const urlMatch = val.match(/instagram\.com\/([^/?#\s]+)/i);
+      if (urlMatch) return `https://instagram.com/${urlMatch[1]}`;
+      // Handle or @handle
+      const handle = val.replace(/^@/, '').trim();
+      if (!handle || handle.includes(' ')) return '';
+      return `https://instagram.com/${handle}`;
     };
 
-    // Extract name from instagram URL if name is empty
+    // Extract username from normalized instagram URL
     const nameFromIg = (ig) => {
       if (!ig) return '';
       const match = ig.match(/instagram\.com\/([^/?#]+)/);
