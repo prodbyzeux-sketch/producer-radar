@@ -357,28 +357,8 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
 
     const { rows } = mappingState;
 
-    // Normalize instagram to full URL: https://instagram.com/username
-    const normalizeIg = (val) => {
-      if (!val) return '';
-      val = val.trim().replace(/\/+$/, ''); // strip trailing slashes
-      // Already a full URL
-      const urlMatch = val.match(/instagram\.com\/([^/?#\s]+)/i);
-      if (urlMatch) return `https://instagram.com/${urlMatch[1]}`;
-      // Handle or @handle
-      const handle = val.replace(/^@/, '').trim();
-      if (!handle || handle.includes(' ')) return '';
-      return `https://instagram.com/${handle}`;
-    };
-
-    // Extract username from normalized instagram URL
-    const nameFromIg = (ig) => {
-      if (!ig) return '';
-      const match = ig.match(/instagram\.com\/([^/?#]+)/);
-      return match ? match[1] : '';
-    };
-
-    // Apply mapping to rows
-    const mapped = rows.map(rawRow => {
+    // Apply mapping to rows — normalize instagram and auto-generate name
+    const importable = rows.map(rawRow => {
       const out = {};
       for (const [csvCol, dbKey] of Object.entries(mapping)) {
         if (dbKey === '__ignore__') continue;
@@ -389,21 +369,12 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           else out[dbKey] = val;
         }
       }
-      // Normalize instagram to full URL
+      // Step 2: Normalize instagram
       if (out.instagram) out.instagram = normalizeIg(out.instagram);
-      // If name is empty, always derive from instagram handle
-      if (!out.name && out.instagram) {
-        out.name = nameFromIg(out.instagram);
-      }
+      // Step 3: Generate name from instagram if missing
+      if (!out.name && out.instagram) out.name = usernameFromIg(out.instagram);
       return out;
-    }).filter(r => r.name || r.instagram); // keep rows with at least a name or instagram
-
-    // Final pass: ensure every row has a name
-    for (const row of mapped) {
-      if (!row.name && row.instagram) row.name = nameFromIg(row.instagram);
-    }
-
-    const importable = mapped.filter(r => r.name);
+    }).filter(r => r.name); // must have a name to be importable
 
     if (!importable.length) {
       toast.error('No importable rows found — make sure Name or Instagram is mapped');
