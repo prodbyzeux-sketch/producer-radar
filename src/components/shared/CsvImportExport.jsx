@@ -423,10 +423,10 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       return;
     }
 
-    // Load existing records — index by normalized instagram (primary unique key)
+    // Load existing records — index by normalized instagram username (primary unique key)
     const existing = await entity.list('-created_date', 5000);
     const igToRecord = new Map(
-      existing.filter(p => p.instagram).map(p => [normalizeIg(p.instagram), p])
+      existing.filter(p => p.instagram).map(p => [igKey(p.instagram), p])
     );
 
     let created = 0, updated = 0;
@@ -439,12 +439,12 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
       toast.loading(`Importing producers… ${Math.min(i + CHUNK, total)} / ${total}`, { id: 'csv-import-progress' });
 
       for (const row of chunk) {
-        // Step 4: Use Instagram as unique ID only
-        const igKey = row.instagram ? normalizeIg(row.instagram) : '';
-        const match = igKey ? igToRecord.get(igKey) : null;
+        // Rule 6: Use Instagram as unique ID — username key for lookup
+        const key = row.instagram ? igKey(row.instagram) : '';
+        const match = key ? igToRecord.get(key) : null;
 
         if (match) {
-          // Update existing record — only overwrite with non-empty values
+          // Update existing — only overwrite with non-empty values
           const updates = {};
           for (const [k, v] of Object.entries(row)) {
             if (v !== '' && v !== null && v !== undefined) updates[k] = v;
@@ -452,10 +452,10 @@ export default function CsvImportExport({ producers, entity, type = 'youtube', o
           await entity.update(match.id, updates);
           updated++;
         } else {
-          // Create new record — each Instagram = one unique record (Step 5)
+          // Rule 1: Every row creates exactly one record
           const newRecord = { source: defaultSource, status: 'por contactar', ...row };
-          const created_ = await entity.create(newRecord);
-          if (igKey) igToRecord.set(igKey, created_ || newRecord);
+          const saved = await entity.create(newRecord);
+          if (key) igToRecord.set(key, saved || newRecord);
           created++;
         }
       }
