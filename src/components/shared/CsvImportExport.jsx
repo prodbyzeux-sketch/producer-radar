@@ -218,17 +218,26 @@ const BOOLEAN_FIELDS = new Set(['favorite']);
 const DATE_FIELDS = new Set(['last_action', 'next_follow_up']);
 
 // Parse date from multiple formats → YYYY-MM-DD or ''
+const SPANISH_MONTHS = {
+  enero: '01', febrero: '02', marzo: '03', abril: '04',
+  mayo: '05', junio: '06', julio: '07', agosto: '08',
+  septiembre: '09', octubre: '10', noviembre: '11', diciembre: '12',
+};
+
 function parseDate(val) {
   if (!val) return '';
   const s = val.trim();
   // Already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Spanish: "23 de enero de 2025"
+  const esp = s.match(/^(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})$/i);
+  if (esp) {
+    const month = SPANISH_MONTHS[esp[2].toLowerCase()];
+    if (month) return `${esp[3]}-${month}-${esp[1].padStart(2,'0')}`;
+  }
   // DD/MM/YYYY or DD-MM-YYYY
   const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
-  // MM/DD/YYYY
-  const mdy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
   // Try native Date parse as fallback
   const d = new Date(s);
   if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
