@@ -138,19 +138,29 @@ export default function ProducerTable({
                       {col === 'name' && (
                         <span className="text-white font-medium text-sm whitespace-nowrap">{producer.name}</span>
                       )}
-                      {col === 'instagram' && (
-                        <span onClick={e => e.stopPropagation()}>
-                          {producer.instagram ? (
-                            <a
-                              href={`https://instagram.com/${producer.instagram.replace('@','')}`}
-                              target="_blank" rel="noopener noreferrer"
-                              onClick={() => onInstagramClick?.(producer)}
-                              className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-[#e1306c] transition-colors text-sm">
-                              <Instagram className="w-3.5 h-3.5" />{producer.instagram}
-                            </a>
-                          ) : <span className="text-[#3f3f46] text-sm">—</span>}
-                        </span>
-                      )}
+                      {col === 'instagram' && (() => {
+                        const rawIg = producer.instagram || '';
+                        const igUsername = rawIg
+                          .replace(/^https?:\/\//i, '')
+                          .replace(/^www\./i, '')
+                          .replace(/^instagram\.com\//i, '')
+                          .replace(/[/?#].*$/, '')
+                          .replace(/^@/, '')
+                          .trim();
+                        return (
+                          <span onClick={e => e.stopPropagation()}>
+                            {igUsername ? (
+                              <a
+                                href={`https://instagram.com/${igUsername}`}
+                                target="_blank" rel="noopener noreferrer"
+                                onClick={() => onInstagramClick?.(producer)}
+                                className="flex items-center gap-1.5 text-[#a1a1aa] hover:text-[#e1306c] transition-colors text-sm">
+                                <Instagram className="w-3.5 h-3.5" />{igUsername}
+                              </a>
+                            ) : <span className="text-[#3f3f46] text-sm">—</span>}
+                          </span>
+                        );
+                      })()}
                       {col === 'youtube' && (
                         <span onClick={e => e.stopPropagation()}>
                           {producer.youtube_channel_url ? (
