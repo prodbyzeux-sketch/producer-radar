@@ -252,7 +252,7 @@ function MappingModal({ headers, dbFields, initialMapping, existingProducers, ra
             <Button variant="ghost" size="sm" onClick={onCancel} className="text-[#a1a1aa] hover:text-white">Cancel</Button>
             <Button size="sm" onClick={() => onConfirm(mapping)}
               className="bg-[#2563eb] hover:bg-[#3b82f6] text-white"
-              disabled={!Object.values(mapping).some(v => v === 'name')}>
+              disabled={!Object.values(mapping).some(v => v === 'name' || v === 'instagram')}>
               Import {rawRows.length} Rows
             </Button>
           </div>
